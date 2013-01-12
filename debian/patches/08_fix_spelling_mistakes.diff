@@ -1,0 +1,15 @@
+Description: Fix spelling mistakes.
+Forwarded: no
+Author: Julián Moreno Patiño <julian@debian.org>
+Last-Update: 2012-12-23
+--- a/hydra.c
++++ b/hydra.c
+@@ -2184,7 +2184,7 @@
+ #endif
+ 
+   if (debug)
+-    printf("[DEBUG] Ouput color flag is %d\n", colored_output);
++    printf("[DEBUG] Output color flag is %d\n", colored_output);
+ 
+   printf("%s (%s) starting at %s\n", PROGRAM, RESOURCE, hydra_build_time());
+   if (debug) {
