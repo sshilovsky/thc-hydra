@@ -1,3 +1,10 @@
+hydra (7.4.2-2kali0) kali; urgency=low
+
+  * Disabled dh_auto_clean and dh_clean, since they interfere with the package
+    (now it compiles correctly).
+
+ -- Emanuele Acri <crossbower@gmail.com>  Thu, 28 Mar 2013 01:09:56 +0100
+
 hydra (7.4.2-1) unstable; urgency=low
 
   * New upstream release.
