@@ -218,6 +218,7 @@ GtkWidget *create_wndMain(void) {
   gtk_widget_show(cmbProtocol);
   gtk_table_attach(GTK_TABLE(table8), cmbProtocol, 1, 2, 4, 5, (GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK), (GtkAttachOptions) (GTK_EXPAND), 0, 0);
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "afp");
+  cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "asterisk");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "cisco");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "cisco-enable");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "cvs");

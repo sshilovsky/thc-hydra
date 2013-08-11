@@ -22,7 +22,7 @@
 /* taken direct from rfc2104 implementation and modified for suitable use
  * for ntlmv2.
  */
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
 
 #include <string.h>
 #include "hmacmd5.h"

@@ -88,17 +88,16 @@ char hydra_mysql_init(int sock) {
   if (protocol == 0xff) {
     pos = &buf[6];
 //    *(strchr(pos, '.')) = '\0';
-    fprintf(stderr, "[Error] %s\n", pos);
+    hydra_report(stderr, "[ERROR] %s\n", pos);
     free(buf);
     return 2;
   }
-  if (protocol < 10) {
-    fprintf(stderr, "[Error] Only mysql 3.23.x and 4.0.x is supported\n");
+  if (protocol <= 10) {
     free(buf);
     return 2;
   }
   if (protocol > 10) {
-    fprintf(stderr, "[Warning] This is protocol version %d, only v10 is supported, not sure if it will work\n", protocol);
+    fprintf(stderr, "[INFO] This is protocol version %d, only v10 is supported, not sure if it will work\n", protocol);
   }
   server_version = &buf[5];
   pos = buf + strlen(server_version) + 10;
@@ -106,7 +105,7 @@ char hydra_mysql_init(int sock) {
 
   if (!strstr(server_version, "3.") && !strstr(server_version, "4.") && strstr(server_version, "5.")) {
 #ifndef LIBMYSQLCLIENT
-    hydra_report(stderr, "[Error] Not an MySQL protocol or unsupported version,\ncheck configure to see if libmysql is found\n");
+    hydra_report(stderr, "[ERROR] Not an MySQL protocol or unsupported version,\ncheck configure to see if libmysql is found\n");
 #endif
     free(buf);
     return 2;
@@ -185,6 +184,7 @@ int start_mysql(int sock, char *ip, int port, unsigned char options, char *miscp
 
   /* read server greeting */
   res = hydra_mysql_init(sock);
+
   if (res == 2) {
     /* old reversing protocol trick did not work */
     /* try using the libmysql client if available */
@@ -211,6 +211,10 @@ int start_mysql(int sock, char *ip, int port, unsigned char options, char *miscp
       */
       if (my_errno == 1049) {
         hydra_report(stderr, "[ERROR] Unknown database: %s\n", database);
+      }
+
+      if (my_errno == 1251) {
+        hydra_report(stderr, "[ERROR] Client does not support authentication protocol requested by server\n");
       }
 
       /*

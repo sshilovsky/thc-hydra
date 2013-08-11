@@ -37,7 +37,7 @@ int print_hex(unsigned char *buf, int len);
 void sasl_plain(char *result, char *login, char *pass);
 int sasl_saslprep(const char *in, sasl_saslprep_flags flags, char **out);
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/hmac.h>

@@ -1,9 +1,10 @@
 /*
- * hydra v7.4.1 (c) 2001-2012 by van Hauser / THC <vh@thc.org>
+ * hydra (c) 2001-2013 by van Hauser / THC <vh@thc.org>
  * http://www.thc.org
  *
  * Parallized network login hacker. Usage only allowed for legal purposes.
  *
+ * License: GNU AFFERO GENERAL PUBLIC LICENSE v3.0, see LICENSE file
  */
 
 #include "hydra.h"
@@ -33,9 +34,7 @@ extern void service_http_get_form(char *ip, int sp, unsigned char options, char 
 extern void service_http_post_form(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_icq(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_pcnfs(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern void service_mysql(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_mssql(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern void service_oracle(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_cvs(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
@@ -48,42 +47,61 @@ extern void service_irc(char *ip, int sp, unsigned char options, char *miscptr, 
 extern void service_http_proxy_urlenum(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 // ADD NEW SERVICES HERE
 
+#ifdef HAVE_MATH_H
+extern void service_mysql(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_mysql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+#endif
 #ifdef LIBPOSTGRES
 extern void service_postgres(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_postgres_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBOPENSSL
 extern void service_smb(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_smb_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_oracle_listener(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_oracle_listener_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_oracle_sid(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_oracle_sid_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_sip(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_sip_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern void service_rdp(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_rdp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBSAPR3
 extern void service_sapr3(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_sapr3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBFIREBIRD
 extern void service_firebird(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_firebird_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBAFP
 extern void service_afp(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_afp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBNCP
 extern void service_ncp(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_ncp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBSSH
 extern void service_ssh(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_ssh_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern void service_sshkey(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_sshkey_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 #ifdef LIBSVN
 extern void service_svn(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_svn_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+#endif
+#ifdef LIBORACLE
+extern void service_oracle(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_oracle_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 #endif
 
-
-extern int service_afp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_cisco_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_cisco_enable_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_cvs_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_smtp_enum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_firebird_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_http_form_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_ftp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_http_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
@@ -91,30 +109,19 @@ extern int service_icq_init(char *ip, int sp, unsigned char options, char *miscp
 extern int service_imap_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_irc_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_ldap_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_oracle_listener_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_mssql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_mysql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_ncp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_nntp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_oracle_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_pcanywhere_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_pcnfs_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_postgres_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_http_proxy_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_rdp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+extern int service_asterisk_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_rexec_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_rlogin_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_rsh_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_sapr3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_oracle_sid_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_sip_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_smb_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_smtp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_snmp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_socks5_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_ssh_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
-extern int service_svn_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_teamspeak_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_telnet_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
 extern int service_http_proxy_urlenum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
@@ -125,7 +132,7 @@ extern int service_xmpp_init(char *ip, int sp, unsigned char options, char *misc
 
 
 // ADD NEW SERVICES HERE
-char *SERVICES = "afp cisco cisco-enable cvs firebird ftp ftps http[s]-{head|get} http[s]-{get|post}-form http-proxy http-proxy-urlenum icq imap[s] irc ldap2[s] ldap3[-{cram|digest}md5][s] mssql mysql ncp nntp oracle oracle-listener oracle-sid pcanywhere pcnfs pop3[s] postgres rdp rexec rlogin rsh sapr3 sip smb smtp[s] smtp-enum snmp socks5 ssh sshkey svn teamspeak telnet[s] vmauthd vnc xmpp";
+char *SERVICES = "asterisk afp cisco cisco-enable cvs firebird ftp ftps http[s]-{head|get} http[s]-{get|post}-form http-proxy http-proxy-urlenum icq imap[s] irc ldap2[s] ldap3[-{cram|digest}md5][s] mssql mysql ncp nntp oracle oracle-listener oracle-sid pcanywhere pcnfs pop3[s] postgres rdp rexec rlogin rsh sapr3 sip smb smtp[s] smtp-enum snmp socks5 ssh sshkey svn teamspeak telnet[s] vmauthd vnc xmpp";
 
 #define MAXBUF       520
 #define MAXLINESIZE  ( ( MAXBUF / 2 ) - 4 )
@@ -143,7 +150,7 @@ char *SERVICES = "afp cisco cisco-enable cvs firebird ftp ftps http[s]-{head|get
 #define RESTOREFILE "./hydra.restore"
 
 #define PROGRAM   "Hydra"
-#define VERSION   "v7.4.2"
+#define VERSION   "v7.5"
 #define AUTHOR    "van Hauser/THC"
 #define EMAIL     "<vh@thc.org>"
 #define AUTHOR2   "David Maciejak"
@@ -285,49 +292,61 @@ int snpdone, snp_is_redo, snpbuflen, snpi, snpj, snpdont;
 
 #include "performance.h"
 
-void help() {
-  printf("Syntax: hydra [[[-l LOGIN|-L FILE] [-p PASS|-P FILE]] | [-C FILE]] [-e nsr]" " [-o FILE] [-t TASKS] [-M FILE [-T TASKS]] [-w TIME] [-W TIME] [-f] [-s PORT]"
+void help(int ext) {
+  printf("Syntax: hydra [[[-l LOGIN|-L FILE] [-p PASS|-P FILE]] | [-C FILE]] [-e nsr]"
+         " [-o FILE] [-t TASKS] [-M FILE [-T TASKS]] [-w TIME] [-W TIME] [-f] [-s PORT]"
 #ifdef HAVE_MATH_H
          " [-x MIN:MAX:CHARSET]"
 #endif
-         " [-SuvV46] [server service [OPT]]|[service://server[:PORT][/OPT]]\n");
+         " [-SuvV46] "
+         //"[server service [OPT]]|"
+         "[service://server[:PORT][/OPT]]\n");
   printf("\nOptions:\n");
-  printf("  -R        restore a previous aborted/crashed session\n");
+  if (ext) printf("  -R        restore a previous aborted/crashed session\n");
 #ifdef LIBOPENSSL
-  printf("  -S        perform an SSL connect\n");
+  if (ext) printf("  -S        perform an SSL connect\n");
 #endif
-  printf("  -s PORT   if the service is on a different default port, define it here\n"
-         "  -l LOGIN or -L FILE  login with LOGIN name, or load several logins from FILE\n"
-         "  -p PASS  or -P FILE  try password PASS, or load several passwords from FILE\n"
+  if (ext) printf("  -s PORT   if the service is on a different default port, define it here\n");
+  printf("  -l LOGIN or -L FILE  login with LOGIN name, or load several logins from FILE\n");
+  printf("  -p PASS  or -P FILE  try password PASS, or load several passwords from FILE\n");
 #ifdef HAVE_MATH_H
-         "  -x MIN:MAX:CHARSET  password bruteforce generation, type \"-x -h\" to get help\n"
+  if (ext) printf("  -x MIN:MAX:CHARSET  password bruteforce generation, type \"-x -h\" to get help\n");
 #endif
-         "  -e nsr    try \"n\" null password, \"s\" login as pass and/or \"r\" reversed login\n"
-         "  -u        loop around users, not passwords (effective! implied with -x)\n"
-         "  -C FILE   colon separated \"login:pass\" format, instead of -L/-P options\n");
-  printf("  -M FILE   list of servers to be attacked in parallel, one entry per line\n"
-         "  -o FILE   write found login/password pairs to FILE instead of stdout\n"
-         "  -f / -F   exit when a login/pass pair is found (-M: -f per host, -F global)\n"
-         "  -t TASKS  run TASKS number of connects in parallel (per host, default: %d)\n"
-         "  -w / -W TIME  waittime for responses (%ds) / between connects per thread\n", TASKS, WAITTIME);
-  printf("  -4 / -6   prefer IPv4 (default) or IPv6 addresses\n"
-         "  -v / -V / -d  verbose mode / show login+pass for each attempt / debug mode \n"
-         "  -U        service module usage details\n"
-         "  server    the target server (use either this OR the -M option)\n"
-         "  service   the service to crack. Supported protocols: %s\n", SERVICES);
+  if (ext) printf("  -e nsr    try \"n\" null password, \"s\" login as pass and/or \"r\" reversed login\n");
+  if (ext) printf("  -u        loop around users, not passwords (effective! implied with -x)\n");
+  printf("  -C FILE   colon separated \"login:pass\" format, instead of -L/-P options\n");
+  printf("  -M FILE   list of servers to be attacked in parallel, one entry per line\n");
+  if (ext) printf("  -o FILE   write found login/password pairs to FILE instead of stdout\n");
+  if (ext) printf("  -f / -F   exit when a login/pass pair is found (-M: -f per host, -F global)\n");
+  printf("  -t TASKS  run TASKS number of connects in parallel (per host, default: %d)\n", TASKS);
+  if (ext) printf("  -w / -W TIME  waittime for responses (%ds) / between connects per thread\n", WAITTIME);
+  if (ext) printf("  -4 / -6   prefer IPv4 (default) or IPv6 addresses\n");
+  if (ext) printf("  -v / -V / -d  verbose mode / show login+pass for each attempt / debug mode \n");
+  printf("  -U        service module usage details\n");
+  if (ext == 0) printf("  -h        more command line options (complete help)\n");
+  printf("  server    the target server (use either this OR the -M option)\n");
+  printf("  service   the service to crack (see below for supported protocols)\n");
   printf("  OPT       some service modules support additional input (-U for module help)\n");
 
-  printf("Use HYDRA_PROXY_HTTP/HYDRA_PROXY and HYDRA_PROXY_AUTH environment for a proxy.\n");
-  printf("\n%s is a tool to guess/crack valid login/password pairs - usage only allowed\nfor legal purposes.  Newest version available at %s\n", PROGRAM, RESOURCE);
-  if (strlen(unsupported) > 0) {
+  printf("\nSupported services: %s\n", SERVICES);
+  printf("\n%s is a tool to guess/crack valid login/password pairs - usage only allowed\nfor legal purposes. This tool is licensed under AGPL v3.0.\nThe newest version is always available at %s\n", PROGRAM, RESOURCE);
+  if (ext && strlen(unsupported) > 0) {
     if (unsupported[strlen(unsupported) - 1] == ' ')
       unsupported[strlen(unsupported) - 1] = 0;
-    printf("The following services were not compiled in: %s.\n", unsupported);
+    printf("These services were not compiled in: %s.\n", unsupported);
   }
-  printf("\nExamples:\n  hydra -l john -p doe 192.168.0.1 ftp\n");
-  printf("  hydra -L user.txt -p defaultpw -S 192.168.0.1 imap PLAIN\n");
-  printf("  hydra -l admin -P pass.txt http-proxy://192.168.0.1\n");
-  printf("  hydra -C defaults.txt -6 pop3s://[fe80::2c:31ff:fe12:ac11]:143/DIGEST-MD5\n");
+  if (ext) {
+    printf("\nUse HYDRA_PROXY_HTTP/HYDRA_PROXY and HYDRA_PROXY_AUTH environment for a proxy.\n");
+    printf("E.g.:  %% export HTTP_PROXY=socks5://127.0.0.1:9150 (or socks4:// or connect://)\n");
+    printf("       %% export HTTP_PROXY_HTTP=http://proxy:8080\n");
+    printf("       %% export HTTP_PROXY_AUTH=user:pass\n");
+  }
+  
+  printf("\nExample%s:%s  hydra -l user -P passlist.txt ftp://192.168.0.1\n", ext == 0 ? "" : "s", ext == 0 ? "" : "\n");
+  if (ext) {
+    printf("  hydra -L userlist.txt -p defaultpw imap://192.168.0.1/PLAIN\n");
+    printf("  hydra -C defaults.txt -6 pop3s://[fe80::2c:31ff:fe12:ac11]:143/TLS:DIGEST-MD5\n");
+  }
   exit(-1);
 }
 
@@ -343,7 +362,8 @@ void help_bfg() {
          "Examples:\n"
          "   -x 3:5:a  generate passwords from length 3 to 5 with all lowercase letters\n"
          "   -x 5:8:A1 generate passwords from length 5 to 8 with uppercase and numbers\n"
-         "   -x 1:3:/  generate passwords from length 1 to 3 containing only slashes\n" "   -x 5:5:/%%,.-  generate passwords with length 5 which consists only of /%%,.-\n");
+         "   -x 1:3:/  generate passwords from length 1 to 3 containing only slashes\n"
+         "   -x 5:5:/%%,.-  generate passwords with length 5 which consists only of /%%,.-\n");
   printf("\nThe bruteforce mode was made by Jan Dlabal, http://houbysoft.com/bfg/\n");
   exit(-1);
 }
@@ -366,36 +386,50 @@ void module_usage() {
       find = 1;
     }
     if (strcmp(hydra_options.service, "xmpp") == 0) {
-      printf("Module xmpp is optionally taking one authentication type of:\n\n" "LOGIN (default), PLAIN, CRAM-MD5, DIGEST-MD5, SCRAM-SHA1\n\n"
+      printf("Module xmpp is optionally taking one authentication type of:\n"
+             "  LOGIN (default), PLAIN, CRAM-MD5, DIGEST-MD5, SCRAM-SHA1\n\n"
              "Note, the target passed should be a fdqn as the value is used in the Jabber init request, example: hermes.jabber.org\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "pop3") == 0)) {
-      printf("Module pop3 is optionally taking one authentication type of:\n\n" "CLEAR (default), LOGIN, PLAIN, CRAM-MD5, CRAM-SHA1,\n" "CRAM-SHA256, DIGEST-MD5, NTLM\n\n");
+      printf("Module pop3 is optionally taking one authentication type of:\n"
+             "  CLEAR (default), LOGIN, PLAIN, CRAM-MD5, CRAM-SHA1,\n"
+             "  CRAM-SHA256, DIGEST-MD5, NTLM.\n"
+             "Additionally TLS encryption via STLS can be enforced with the TLS option.\n\n"
+             "Example: pop3://target/TLS:PLAIN\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "rdp") == 0)) {
-      printf("Module rdp is optionally taking the windows domain name.\n" "For example:\nhydra rdp://192.168.0.1/firstdomainname -l john -p doe\n\n");
+      printf("Module rdp is optionally taking the windows domain name.\n"
+             "For example:\nhydra rdp://192.168.0.1/firstdomainname -l john -p doe\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "nntp") == 0)) {
-      printf("Module nntp is optionally taking one authentication type of:\n\n" "USER (default), LOGIN, PLAIN, CRAM-MD5, DIGEST-MD5, NTLM\n\n");
+      printf("Module nntp is optionally taking one authentication type of:\n"
+             "  USER (default), LOGIN, PLAIN, CRAM-MD5, DIGEST-MD5, NTLM\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "imap") == 0)) {
-      printf("Module imap is optionally taking one authentication type of:\n\n"
-             "CLEAR or APOP (default), LOGIN, PLAIN, CRAM-MD5, CRAM-SHA1,\n" "CRAM-SHA256, DIGEST-MD5, NTLM\n\n");
+      printf("Module imap is optionally taking one authentication type of:\n"
+             "  CLEAR or APOP (default), LOGIN, PLAIN, CRAM-MD5, CRAM-SHA1,\n"
+             "  CRAM-SHA256, DIGEST-MD5, NTLM\n"
+             "Additionally TLS encryption via STARTTLS can be enforced with the TLS option.\n\n"
+             "Example: imap://target/TLS:PLAIN\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "smtp-enum")) == 0) {
       printf("Module smtp-enum is optionally taking one SMTP command of:\n\n"
              "VRFY (default), EXPN, RCPT (which will connect using \"root\" account)\n"
              "login parameter is used as username and password parameter as the domain name\n"
-             "For example to test if john@localhost exists on 192.168.0.1:\n" "hydra smtp-enum://192.168.0.1/vrfy -l john -p localhost\n\n");
+             "For example to test if john@localhost exists on 192.168.0.1:\n"
+             "hydra smtp-enum://192.168.0.1/vrfy -l john -p localhost\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "smtp")) == 0) {
-      printf("Module smtp is optionally taking one authentication type of:\n\n" "LOGIN (default), PLAIN, CRAM-MD5, DIGEST-MD5, NTLM\n\n");
+      printf("Module smtp is optionally taking one authentication type of:\n"
+             "  LOGIN (default), PLAIN, CRAM-MD5, DIGEST-MD5, NTLM\n\n"
+             "Additionally TLS encryption via STARTTLS can be enforced with the TLS option.\n\n"
+             "Example: smtp://target/TLS:PLAIN\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "svn") == 0)) {
@@ -407,7 +441,8 @@ void module_usage() {
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "firebird") == 0)) {
-      printf("Module firebird is optionally taking the database path to attack,\n" "default is \"C:\\Program Files\\Firebird\\Firebird_1_5\\security.fdb\"\n\n");
+      printf("Module firebird is optionally taking the database path to attack,\n"
+             "default is \"C:\\Program Files\\Firebird\\Firebird_1_5\\security.fdb\"\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "mysql") == 0)) {
@@ -415,7 +450,8 @@ void module_usage() {
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "irc") == 0)) {
-      printf("Module irc is optionally taking the general server password, if the server is requiring one\n" "and none is passed the password from -p/-P will be used\n\n");
+      printf("Module irc is optionally taking the general server password, if the server is requiring one\n"
+             "and none is passed the password from -p/-P will be used\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "postgres") == 0)) {
@@ -424,7 +460,8 @@ void module_usage() {
     }
     if (!find && (strcmp(hydra_options.service, "telnet") == 0)) {
       printf("Module telnet is optionally taking the string which is displayed after\n"
-             "a successful login (case insensitive), use if the default in the telnet\n" "module produces too many false positives\n\n");
+             "a successful login (case insensitive), use if the default in the telnet\n"
+             "module produces too many false positives\n\n");
       find = 1;
     }
     if (!find && (strcmp(hydra_options.service, "sapr3") == 0)) {
@@ -441,7 +478,8 @@ void module_usage() {
     }
     if (!find && (strcmp(hydra_options.service, "cisco-enable") == 0)) {
       printf("Module cisco-enable is optionally taking the logon password for the cisco device\n"
-             "Note: if AAA authentication is used, use the -l option for the username\n" "and the optional parameter for the password of the user.\n"
+             "Note: if AAA authentication is used, use the -l option for the username\n"
+             "and the optional parameter for the password of the user.\n"
              "Examples:\n"
              "  hydra -P pass.txt target cisco-enable  (direct console access)\n"
              "  hydra -P pass.txt -m cisco target cisco-enable  (Logon password cisco)\n"
@@ -493,6 +531,7 @@ void module_usage() {
              "By default this module is configured to follow a maximum of 5 redirections in\n"
              "a row. It always gathers a new cookie from the same URL without variables\n"
              "The parameters take three \":\" separated values, plus optional values.\n"
+             "(Note: if you need a colon in the option string as value, escape it with \"\\:\", but do not escape a \"\\\" with \"\\\\\".)\n" 
              "\nSyntax:   <url>:<form parameters>:<condition string>[:<optional>[:<optional>]\n"
              "First is the page on the server to GET or POST to (URL).\n"
              "Second is the POST/GET variables (taken from either the browser, proxy, etc.\n"
@@ -506,11 +545,12 @@ void module_usage() {
              "The following parameters are optional:\n"
              " C=/page/uri     to define a different page to gather initial cookies from\n"
              " H=My-Hdr: foo   to send a user defined HTTP header with each request\n"
+             "                 ^USER^ and ^PASS^ can also be put into these headers!\n"
              "Examples:\n"
-             " \"/login.php:user=^USER^&pass=^PASS^&mid=123:incorrect\"\n"
-             " \"/login.php:user=^USER^&pass=^PASS^&mid=123:S=authlog=.*success\"\n"
+             " \"/login.php:user=^USER^&pass=^PASS^:incorrect\"\n"
+             " \"/login.php:user=^USER^&pass=^PASS^&colon=colon\\:escape:S=authlog=.*success\"\n"
              " \"/login.php:user=^USER^&pass=^PASS^&mid=123:authlog=.*failed\"\n"
-             " \"/login:user=^USER&pass=^PASS:failed:H=Authorization: Basic dT1w:H=X-Foo: Bar\"\n"
+             " \"/:user=^USER&pass=^PASS^:failed:H=Authorization: Basic dT1w:H=X-User: ^USER^\"\n"
              " \"/exchweb/bin/auth/owaauth.dll:destination=http%%3A%%2F%%2F<target>%%2Fexchange&flags=0&username=<domain>%%5C^USER^&password=^PASS^&SubmitCreds=x&trusted=0:reason=:C=/exchweb\"\n",
              hydra_options.service);
       find = 1;
@@ -554,7 +594,8 @@ void module_usage() {
                   || (strcmp(hydra_options.service, "http-post") == 0)
                   || (strcmp(hydra_options.service, "https-post") == 0))
       ) {
-      printf("Module %s requires the page to authenticate.\n" "For example:  \"/secret\" or \"http://bla.com/foo/bar\" or \"https://test.com:8080/members\"\n\n",
+      printf("Module %s requires the page to authenticate.\n"
+             "For example:  \"/secret\" or \"http://bla.com/foo/bar\" or \"https://test.com:8080/members\"\n\n",
              hydra_options.service);
       find = 1;
     }
@@ -1004,6 +1045,8 @@ void hydra_service_init(int target_no) {
   if (strcmp(hydra_options.service, "afp") == 0)
     x = service_afp_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
 #endif
+  if (strcmp(hydra_options.service, "asterisk") == 0)
+    x = service_asterisk_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
   if (strcmp(hydra_options.service, "cisco-enable") == 0)
     x = service_cisco_enable_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
   if (strcmp(hydra_options.service, "cvs") == 0)
@@ -1033,10 +1076,16 @@ void hydra_service_init(int target_no) {
   if (strncmp(hydra_options.service, "ldap", 4) == 0)
     x = service_ldap_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
 #ifdef LIBOPENSSL
+  if (strcmp(hydra_options.service, "sip") == 0)
+    x = service_sip_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
+  if (strcmp(hydra_options.service, "smb") == 0 || strcmp(hydra_options.service, "smbnt") == 0)
+    x = service_smb_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
   if (strcmp(hydra_options.service, "oracle-listener") == 0)
     x = service_oracle_listener_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
   if (strcmp(hydra_options.service, "oracle-sid") == 0)
     x = service_oracle_sid_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
+  if (strcmp(hydra_options.service, "rdp") == 0)
+    x = service_rdp_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
 #endif
   if (strcmp(hydra_options.service, "mssql") == 0)
     x = service_mssql_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
@@ -1064,10 +1113,6 @@ void hydra_service_init(int target_no) {
   if (strcmp(hydra_options.service, "postgres") == 0)
     x = service_postgres_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
 #endif
-#ifdef LIBOPENSSL
-  if (strcmp(hydra_options.service, "rdp") == 0)
-    x = service_rdp_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
-#endif
   if (strcmp(hydra_options.service, "rexec") == 0)
     x = service_rexec_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
   if (strcmp(hydra_options.service, "rlogin") == 0)
@@ -1077,14 +1122,6 @@ void hydra_service_init(int target_no) {
 #ifdef LIBSAPR3
   if (strcmp(hydra_options.service, "sapr3") == 0)
     x = service_sapr3_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
-#endif
-#ifdef LIBOPENSSL
-  if (strcmp(hydra_options.service, "sip") == 0)
-    x = service_sip_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
-#endif
-#ifdef LIBOPENSSL
-  if (strcmp(hydra_options.service, "smb") == 0 || strcmp(hydra_options.service, "smbnt") == 0)
-    x = service_smb_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
 #endif
   if (strcmp(hydra_options.service, "smtp") == 0)
     x = service_smtp_init(hydra_targets[target_no]->ip, -1, options, hydra_options.miscptr, hydra_brains.ofp, port);
@@ -1164,6 +1201,8 @@ int hydra_spawn_head(int head_no, int target_no) {
         printf("[DEBUG] head_no %d has pid %d\n", head_no, getpid());
 
       // now call crack module 
+      if (strcmp(hydra_options.service, "asterisk") == 0)
+        service_asterisk(hydra_targets[target_no]->ip, hydra_heads[head_no]->sp[1], options, hydra_options.miscptr, hydra_brains.ofp, port);
       if (strcmp(hydra_options.service, "telnet") == 0)
         service_telnet(hydra_targets[target_no]->ip, hydra_heads[head_no]->sp[1], options, hydra_options.miscptr, hydra_brains.ofp, port);
       if (strcmp(hydra_options.service, "ftp") == 0)
@@ -1382,6 +1421,7 @@ int hydra_lookup_port(char *service) {
     {"xmpp", PORT_XMPP, PORT_XMPP_SSL},
     {"irc", PORT_IRC, PORT_IRC_SSL},
     {"rdp", PORT_RDP, PORT_RDP_SSL},
+    {"asterisk", PORT_ASTERISK, PORT_ASTERISK_SSL},
     {"", PORT_NOPORT, PORT_NOPORT}
 // ADD NEW SERVICES HERE - add new port numbers to hydra.h 
   };
@@ -1930,7 +1970,7 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in6 *ipv6 = NULL;
   struct sockaddr_in *ipv4 = NULL;
 
-  printf("%s %s (c)2012 by %s & %s - for legal purposes only\n\n", PROGRAM, VERSION, AUTHOR, AUTHOR2);
+  printf("%s %s (c)2013 by %s & %s - for legal purposes only\n\n", PROGRAM, VERSION, AUTHOR, AUTHOR2);
 #ifndef LIBPOSTGRES
   SERVICES = hydra_string_replace(SERVICES, "postgres ", "");
   strcat(unsupported, "postgres ");
@@ -2033,11 +2073,15 @@ int main(int argc, char *argv[]) {
   hydra_brains.targets = 1;
   hydra_options.waittime = waittime = WAITTIME;
 
-  // command line processing 
+  // command line processing
+  if (argc > 1 && strncmp(argv[1], "-h", 2) == 0)
+    help(1);
   if (argc < 3 && (argc < 2 || strcmp(argv[1], "-R") != 0))
-    help();
-  while ((i = getopt(argc, argv, "64Rde:vVl:fFg:L:p:P:o:M:C:t:T:m:w:W:s:SUux:")) >= 0) {
+    help(0);
+  while ((i = getopt(argc, argv, "h64Rde:vVl:fFg:L:p:P:o:M:C:t:T:m:w:W:s:SUux:")) >= 0) {
     switch (i) {
+    case 'h':
+      help(1);
     case 'u':
       hydra_options.loop_mode = 1;
       break;
@@ -2254,6 +2298,7 @@ int main(int argc, char *argv[]) {
           port_pos = NULL;
 
         if (port_pos != NULL) {
+          *port_pos = 0;
           // removing ://[ 
           if (port_pos - service_pos - 2 - strlen(targetport_sep) == 0)
             bail("identifying server address");
@@ -2265,22 +2310,32 @@ int main(int argc, char *argv[]) {
           hydra_options.server[port_pos - service_pos - 3] = '\0';
         }
         // check if we specify a parameter 
-
         if ((param_pos != NULL) && (port_pos == NULL)) {
           if (param_pos - service_pos - 3 == 0)
             bail("could not identify server address");
           if ((hydra_options.server = malloc(1 + param_pos - service_pos - 3)) == NULL)
             bail("could not allocate memory");
-          strncpy(hydra_options.server, service_pos + 3, param_pos - service_pos - 3);
-          hydra_options.server[param_pos - 3 - service_pos] = '\0';
+          if (service_pos[3] == '[') {
+            strncpy(hydra_options.server, service_pos + 4, param_pos - service_pos - 3);
+            hydra_options.server[param_pos - 4 - service_pos] = '\0';
+          } else {
+            strncpy(hydra_options.server, service_pos + 3, param_pos - service_pos - 3);
+            hydra_options.server[param_pos - 3 - service_pos] = '\0';
+          }
+          if (hydra_options.server[strlen(hydra_options.server) - 1] == ']')
+            hydra_options.server[strlen(hydra_options.server) - 1] = 0;
         }
         if ((port_pos == NULL) && (param_pos == NULL)) {
           if (strlen(targetdef) - strlen(hydra_options.service) - 3 == 0)
             bail("could not identify server address");
           if ((hydra_options.server = malloc(1 + strlen(targetdef) - strlen(hydra_options.service) - 3)) == NULL)
             bail("could not allocate memory");
-          strcpy(hydra_options.server, service_pos + 3);
-          hydra_options.server[strlen(targetdef) - strlen(hydra_options.service) - 3] = '\0';
+          if (service_pos[3] == '[')
+            strcpy(hydra_options.server, service_pos + 4);
+          else
+            strcpy(hydra_options.server, service_pos + 3);
+          if (hydra_options.server[strlen(hydra_options.server) - 1] == ']')
+            hydra_options.server[strlen(hydra_options.server) - 1] = 0;
         } else {
           char port_temp[6] = "";
 
@@ -2305,11 +2360,8 @@ int main(int argc, char *argv[]) {
               param_pos--;
             }
 
-            if (port_pos) {
-              size_of_miscptr = strlen(targetdef) - strlen(hydra_options.service) - 3 - strlen(port_temp) - strlen(hydra_options.server) - 1;
-            } else {
-              size_of_miscptr = strlen(targetdef) - strlen(hydra_options.service) - 3 - strlen(hydra_options.server) - 1;
-            }
+            size_of_miscptr = strlen(param_pos);
+
             if (size_of_miscptr > 0) {
               if ((hydra_options.miscptr = malloc(1 + size_of_miscptr)) == NULL)
                 bail("could not allocate memory");
@@ -2326,7 +2378,7 @@ int main(int argc, char *argv[]) {
         if (modusage)
           hydra_options.service = targetdef;
         else
-          help();
+          help(0);
       }
     } else {
       hydra_options.server = argv[optind];
@@ -2341,6 +2393,18 @@ int main(int argc, char *argv[]) {
       hydra_options.service[strlen(hydra_options.service) - 1] = 0;
     }
 
+    if (getenv("HYDRA_PROXY_HTTP") || getenv("HYDRA_PROXY")) {
+      if (strcmp(hydra_options.service, "afp") == 0 || strcmp(hydra_options.service, "firebird") == 0 || strncmp(hydra_options.service, "mysql", 5) == 0 || 
+          strcmp(hydra_options.service, "ncp") == 0 || strcmp(hydra_options.service, "oracle") == 0 || strcmp(hydra_options.service, "postgres") == 0 || 
+          strncmp(hydra_options.service, "ssh", 3) == 0 || strcmp(hydra_options.service, "sshkey") == 0 || strcmp(hydra_options.service, "svn") == 0 ||
+          strcmp(hydra_options.service, "sapr3") == 0) {
+        fprintf(stderr, "[WARNING] module %s does not support HYDRA_PROXY* !\n", hydra_options.service);
+        proxy_string = NULL;
+      }
+    }
+
+    /* here start the services */
+    
     if (strcmp(hydra_options.service, "ssl") == 0 || strcmp(hydra_options.service, "www") == 0 || strcmp(hydra_options.service, "http") == 0
         || strcmp(hydra_options.service, "https") == 0) {
       fprintf(stderr, "[WARNING] The service http has been replaced with http-head and http-get, using by default GET method. Same for https.\n");
@@ -2381,7 +2445,9 @@ int main(int argc, char *argv[]) {
       i = 1;
     if (strcmp(hydra_options.service, "imap") == 0)
       i = 1;
-    if (strcmp(hydra_options.service, "vmauthd") == 0)
+    if (strcmp(hydra_options.service, "asterisk") == 0)
+      i = 1;
+   if (strcmp(hydra_options.service, "vmauthd") == 0)
       i = 1;
     if (strcmp(hydra_options.service, "rexec") == 0)
       i = 1;
@@ -2702,10 +2768,23 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "[WARNING] http-head auth does not work with every server, better use http-get\n");
     }
 
-    if (strcmp(hydra_options.service, "http-get-form") == 0 || strcmp(hydra_options.service, "http-post-form") == 0) {
+    if (strcmp(hydra_options.service, "http-get-form") == 0 || strcmp(hydra_options.service, "http-post-form") == 0 || strcmp(hydra_options.service, "https-get-form") == 0 || strcmp(hydra_options.service, "https-post-form") == 0 ) {
       char bufferurl[1024], *url, *variables, *cond, *optional1;
 
-      i = 1;
+      if (strncmp(hydra_options.service, "http-", 5) == 0) {
+        i = 1;
+      } else { // https
+#ifdef LIBOPENSSL
+        i = 1;
+        hydra_options.ssl = 1;
+        if (strcmp(hydra_options.service, "https-post-form") == 0)
+          strcpy(hydra_options.service, "http-post-form");
+        else
+          strcpy(hydra_options.service, "http-get-form");
+#else
+        bail("Compiled without SSL support, module not available");
+#endif
+      }
       if (hydra_options.miscptr == NULL) {
         fprintf(stderr, "[WARNING] You must supply the web page as an additional option or via -m, default path set to /\n");
         hydra_options.miscptr = malloc(2);
@@ -2721,67 +2800,50 @@ int main(int argc, char *argv[]) {
         printf("[INFO] Using HTTP Proxy: %s\n", getenv("HYDRA_PROXY_HTTP"));
         use_proxy = 1;
       }
-      sprintf(bufferurl, "%.1000s", hydra_options.miscptr);
-      url = strtok(bufferurl, ":");
-      variables = strtok(NULL, ":");
-      cond = strtok(NULL, ":");
-      optional1 = strtok(NULL, "\n");
-      if ((variables == NULL ) || (strstr(variables, "^USER^") == NULL && strstr(variables, "^PASS^") == NULL)) {
-        fprintf(stderr, "[ERROR] the variables argument needs at least the strings ^USER^ or ^PASS^: %s\n", variables);
-        exit(-1);
-      }
-      if ((url == NULL) || (cond == NULL)) {
-        fprintf(stderr, "[ERROR] Wrong syntax, requires three arguments separated by a colon which may not be null: %s\n", bufferurl);
-        exit(-1);
-      }
-      while ((optional1 = strtok(NULL, ":")) != NULL) {
-        if (optional1[1] != '=' && optional1[1] != ':' && optional1[1] != 0) {
-          fprintf(stderr, "[ERROR] Wrong syntax of optional argument: %s\n", optional1);
+      
+      if (strstr(hydra_options.miscptr, "\\:") != NULL) {
+        fprintf(stderr, "[WARNING] escape sequence \\: detected in module option, no parameter verification is performed.\n");
+      } else {
+        sprintf(bufferurl, "%.1000s", hydra_options.miscptr);
+        url = strtok(bufferurl, ":");
+        variables = strtok(NULL, ":");
+        cond = strtok(NULL, ":");
+        optional1 = strtok(NULL, "\n");
+        if ((variables == NULL ) || (strstr(variables, "^USER^") == NULL && strstr(variables, "^PASS^") == NULL)) {
+          fprintf(stderr, "[ERROR] the variables argument needs at least the strings ^USER^ or ^PASS^: %s\n", variables);
           exit(-1);
         }
-        switch (optional1[0]) {
-        case 'C':              // fall through
-        case 'c':
-          if (optional1[1] != '=' || optional1[2] != '/') {
-            fprintf(stderr, "[ERROR] Wrong syntax of parameter C, must look like 'C=/url/of/page', not http:// etc.: %s\n", optional1);
+        if ((url == NULL) || (cond == NULL)) {
+          fprintf(stderr, "[ERROR] Wrong syntax, requires three arguments separated by a colon which may not be null: %s\n", bufferurl);
+          exit(-1);
+        }
+        while ((optional1 = strtok(NULL, ":")) != NULL) {
+          if (optional1[1] != '=' && optional1[1] != ':' && optional1[1] != 0) {
+            fprintf(stderr, "[ERROR] Wrong syntax of optional argument: %s\n", optional1);
             exit(-1);
           }
-          break;
-        case 'H':              // fall through
-        case 'h':
-          if (optional1[1] != '=' || strtok(NULL, ":") == NULL) {
-            fprintf(stderr, "[ERROR] Wrong syntax of parameter H, must look like 'H=X-My-Header: MyValue', no http:// : %s\n", optional1);
-            exit(-1);
+          switch (optional1[0]) {
+          case 'C':              // fall through
+          case 'c':
+            if (optional1[1] != '=' || optional1[2] != '/') {
+              fprintf(stderr, "[ERROR] Wrong syntax of parameter C, must look like 'C=/url/of/page', not http:// etc.: %s\n", optional1);
+              exit(-1);
+            }
+            break;
+          case 'H':              // fall through
+          case 'h':
+            if (optional1[1] != '=' || strtok(NULL, ":") == NULL) {
+              fprintf(stderr, "[ERROR] Wrong syntax of parameter H, must look like 'H=X-My-Header: MyValue', no http:// : %s\n", optional1);
+              exit(-1);
+            }
+            break;
+          default:
+            fprintf(stderr, "[ERROR] Unknown optional argument: %s", optional1);
           }
-          break;
-        default:
-          fprintf(stderr, "[ERROR] Unknown optional argument: %s", optional1);
         }
       }
     }
 
-    if (strcmp(hydra_options.service, "https-get-form") == 0 || strcmp(hydra_options.service, "https-post-form") == 0) {
-      char bufferurl[1024], *url, *variables, *cond, *optional1;
-
-      sprintf(bufferurl, "%.1000s", hydra_options.miscptr);
-      url = strtok(bufferurl, ":");
-      variables = strtok(NULL, ":");
-      cond = strtok(NULL, ":");
-      optional1 = strtok(NULL, ":");
-      if ((url == NULL) || (variables == NULL) || (cond == NULL)) {
-        bail("Wrong syntax, arguments could not be null");
-      }
-#ifdef LIBOPENSSL
-      i = 1;
-      hydra_options.ssl = 1;
-      if (strcmp(hydra_options.service, "https-post-form") == 0)
-        strcpy(hydra_options.service, "http-post-form");
-      else
-        strcpy(hydra_options.service, "http-get-form");
-#else
-      bail("Compiled without SSL support, module not available");
-#endif
-    }
     if (strcmp(hydra_options.service, "xmpp") == 0)
       i = 1;
     if (strcmp(hydra_options.service, "irc") == 0)
@@ -2874,10 +2936,10 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "[ERROR] Maximum size of the login file is %d, this file has %lu bytes.\n", MAX_BYTES, (unsigned long int)hydra_brains.sizelogin);
           exit(-1);
         }
-        login_ptr = malloc(hydra_brains.sizelogin + 4);
+        login_ptr = malloc(hydra_brains.sizelogin + hydra_brains.countlogin + 8);
         if (login_ptr == NULL)
           bail("Could not allocate enough memory for login file data");
-        memset(login_ptr, 0, hydra_brains.sizelogin + 4);
+        memset(login_ptr, 0, hydra_brains.sizelogin + hydra_brains.countlogin + 8);
         fill_mem(login_ptr, lfp, 0);
       } else {
         login_ptr = hydra_options.login;
@@ -2899,10 +2961,10 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "[ERROR] Maximum size of the password file is %d, this file has %lu bytes.\n", MAX_BYTES, (unsigned long int)hydra_brains.sizepass);
           exit(-1);
         }
-        pass_ptr = malloc(hydra_brains.sizepass + 4);
+        pass_ptr = malloc(hydra_brains.sizepass + hydra_brains.countpass + 8);
         if (pass_ptr == NULL)
           bail("Could not allocate enough memory for password file data");
-        memset(pass_ptr, 0, hydra_brains.sizepass + 4);
+        memset(pass_ptr, 0, hydra_brains.sizepass + hydra_brains.countpass + 8);
         fill_mem(pass_ptr, pfp, 0);
       } else {
         if (hydra_options.pass != NULL) {
@@ -2942,10 +3004,10 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "[ERROR] Maximum size of the colon file is %d, this file has %lu bytes.\n", MAX_BYTES / 2, (unsigned long int)hydra_brains.sizelogin);
           exit(-1);
         }
-      csv_ptr = malloc(hydra_brains.sizelogin + hydra_brains.countlogin + 8 + 4);
+      csv_ptr = malloc(hydra_brains.sizelogin + 2 * hydra_brains.countlogin + 8);
       if (csv_ptr == NULL)
         bail("Could not allocate enough memory for colon file data");
-      memset(csv_ptr, 0, hydra_brains.sizelogin + hydra_brains.countlogin + 8 + 4);
+      memset(csv_ptr, 0, hydra_brains.sizelogin + 2 * hydra_brains.countlogin + 8);
       fill_mem(csv_ptr, cfp, 1);
 //printf("count: %d, size: %d\n", hydra_brains.countlogin, hydra_brains.sizelogin);
 //hydra_dump_data(csv_ptr, hydra_brains.sizelogin + hydra_brains.countlogin + 8, "colon data");
@@ -2973,7 +3035,7 @@ int main(int argc, char *argv[]) {
       hydra_brains.targets = countservers = countinfile = countlines(ifp, 0);
       if (countinfile == 0)
         bail("File for IP addresses is empty!");
-      hydra_targets = malloc(sizeof(hydra_targets) * countservers);
+      hydra_targets = malloc(sizeof(hydra_targets) * (countservers + 1) + 8);
       if (hydra_targets == NULL)
         bail("Could not allocate enough memory for target data");
       sizeinfile = size_of_data;
@@ -2985,7 +3047,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "[ERROR] Maximum size of the server file is %d, this file has %d bytes.\n", MAX_BYTES / 1000, sizeinfile);
         exit(-1);
       }
-      servers_ptr = malloc(sizeinfile);
+      servers_ptr = malloc(sizeinfile + countservers + 8);
+      memset(servers_ptr, 0, sizeinfile + countservers + 8);
       if (servers_ptr == NULL)
         bail("Could not allocate enough memory for target file data");
       fill_mem(servers_ptr, ifp, 0);
@@ -3130,7 +3193,7 @@ int main(int argc, char *argv[]) {
       bail("No login/password combination given!");
     if (hydra_brains.todo < hydra_options.tasks) {
       if (verbose && hydra_options.tasks != TASKS)
-        printf("[VERBOSE] More tasks defined than login/pass pairs exist. Tasks reduced to %d.\n", hydra_brains.todo);
+        printf("[VERBOSE] More tasks defined than login/pass pairs exist. Tasks reduced to %lu\n", hydra_brains.todo);
       hydra_options.tasks = hydra_brains.todo;
     }
   }
@@ -3178,6 +3241,7 @@ int main(int argc, char *argv[]) {
             hydra_options.server == NULL ? hydra_options.infile_ptr : hydra_options.server, hydra_options.service, prg);
     for (i = 1; i < argc; i++)
       fprintf(hydra_brains.ofp, " %s", argv[i]);
+    fprintf(hydra_brains.ofp, ")\n"); 
   }
   
   // we have to flush all writeable buffered file pointers before forking 

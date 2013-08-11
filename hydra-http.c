@@ -40,7 +40,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
       hydra_report(stderr, "C:%s\n", buffer);
     break;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_DIGESTMD5:{
       char *pbuffer;
 
@@ -50,7 +50,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
       sasl_digest_md5(buffer2, login, pass, buffer, miscptr, type, webtarget, webport, header);
       if (buffer2 == NULL) {
-        return 4;
+        return 3;
       }
 
       if (debug)
@@ -171,7 +171,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
         http_auth_mechanism = AUTH_NTLM;
         find_auth = 1;
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if (hydra_strcasestr(buf, "WWW-Authenticate: Digest") != NULL) {
         http_auth_mechanism = AUTH_DIGESTMD5;
         find_auth = 1;

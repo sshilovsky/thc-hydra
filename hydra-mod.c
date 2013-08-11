@@ -290,7 +290,7 @@ int internal__hydra_connect(char *host, int port, int protocol, int type) {
 	      hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/2)\n", cnt);
               err = 1;
             }
-	    if (buf[1] == SOCKS_NOMETHOD) {
+	    if ((unsigned int) buf[1] == SOCKS_NOMETHOD) {
 	      hydra_report(stderr, "[ERROR] SOCKS5 proxy authentication method negotiation failed\n");
               err = 1;
             }
@@ -425,8 +425,16 @@ int internal__hydra_connect(char *host, int port, int protocol, int type) {
 
 #ifdef LIBOPENSSL
 RSA *ssl_temp_rsa_cb(SSL * ssl, int export, int keylength) {
-  if (rsa == NULL)
+  if (rsa == NULL) {
+#ifdef NO_RSA_LEGACY
+    RSA *private = RSA_new();
+    BIGNUM *f4 = BN_new();
+    BN_set_word(f4, RSA_F4);
+    RSA_generate_key_ex(rsa,1024, f4, NULL);
+#else
     rsa = RSA_generate_key(1024, RSA_F4, NULL, NULL);
+#endif
+  }
   return rsa;
 }
 
@@ -452,6 +460,8 @@ int internal__hydra_connect_to_ssl(int socket) {
     }
     /* set the compatbility mode */
     SSL_CTX_set_options(sslContext, SSL_OP_ALL);
+    SSL_CTX_set_options(sslContext, SSL_OP_NO_SSLv2);
+    SSL_CTX_set_options(sslContext, SSL_OP_NO_TLSv1);
 
     /* we set the default verifiers and dont care for the results */
     (void) SSL_CTX_set_default_verify_paths(sslContext);
@@ -810,7 +820,7 @@ int hydra_recv(int socket, char *buf, int length) {
 }
 
 int hydra_recv_nb(int socket, char *buf, int length) {
-  int ret;
+  int ret = -1;
   char text[64];
   
   if (hydra_data_ready_timed(socket, (long) waittime, 0) > 0) {
@@ -930,6 +940,47 @@ int make_to_lower(char *buf) {
     buf++;
   }
   return 1;
+}
+
+char *hydra_strrep(char *string, char *oldpiece, char *newpiece) {
+  int str_index, newstr_index, oldpiece_index, end, new_len, old_len, cpy_len;
+  char *c, oldstring[1024];
+  static char newstring[1024];
+
+  if (string == NULL || oldpiece == NULL || newpiece == NULL || strlen(string) >= sizeof(oldstring) - 1 || (strlen(string) + strlen(newpiece) - strlen(oldpiece) >= sizeof(newstring) - 1 && strlen(string) > strlen(oldpiece) ))
+    return NULL;
+
+  strcpy(newstring, string);
+  strcpy(oldstring, string);
+
+ // while ((c = (char *) strstr(oldstring, oldpiece)) != NULL) {
+    c = (char *) strstr(oldstring, oldpiece);
+    new_len = strlen(newpiece);
+    old_len = strlen(oldpiece);
+    end = strlen(oldstring) - old_len;
+    oldpiece_index = c - oldstring;
+    newstr_index = 0;
+    str_index = 0;
+    while (c != NULL && str_index <= end) {
+      /* Copy characters from the left of matched pattern occurence */
+      cpy_len = oldpiece_index - str_index;
+      strncpy(newstring + newstr_index, oldstring + str_index, cpy_len);
+      newstr_index += cpy_len;
+      str_index += cpy_len;
+
+      /* Copy replacement characters instead of matched pattern */
+      strcpy(newstring + newstr_index, newpiece);
+      newstr_index += new_len;
+      str_index += old_len;
+      /* Check for another pattern match */
+      if ((c = (char *) strstr(oldstring + str_index, oldpiece)) != NULL)
+        oldpiece_index = c - oldstring;
+    }
+    /* Copy remaining characters from the right of last matched pattern */
+    strcpy(newstring + newstr_index, oldstring + str_index);
+    strcpy(oldstring, newstring);
+//  }
+  return newstring;
 }
 
 unsigned char hydra_conv64(unsigned char in) {
@@ -1102,7 +1153,7 @@ int hydra_string_match(char *str, const char *regex) {
  * str_replace.c implements a str_replace PHP like function
  * Copyright (C) 2009  chantra <chantra__A__debuntu__D__org>
  *
- * Create a new string with [substr] being replaced by [replacement] in [string]
+ * Create a new string with [substr] being replaced ONCE by [replacement] in [string]
  * Returns the new string, or NULL if out of memory.
  * The caller is responsible for freeing this new string.
  *

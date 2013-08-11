@@ -140,7 +140,7 @@ int start_http_proxy(int s, char *ip, int port, unsigned char options, char *mis
       if (buf == NULL)
         return 1;
     } else {
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if (hydra_strcasestr(buf, "Proxy-Authenticate: Digest") != NULL) {
 
         char *pbuffer;

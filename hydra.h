@@ -112,6 +112,8 @@
 #define PORT_IRC_SSL    6697
 #define PORT_RDP        3389
 #define PORT_RDP_SSL    3389
+#define PORT_ASTERISK   5038 
+#define PORT_ASTERISK_SSL  5038 
 
 #define False 0
 #define True  1

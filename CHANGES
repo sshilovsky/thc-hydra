@@ -1,6 +1,31 @@
 Changelog for hydra
 -------------------
 
+Release 7.5
+* Moved the license from GPLv3 to AGPLv3 (see LICENSE file)
+* Added module for Asterisk Call Manager
+* Added support for Android where some functions are not available
+* hydra main:
+   - reduced the screen output if run without -h, full screen with -h
+   - fix for ipv6 and port parsing with service://[ipv6address]:port/OPTIONS
+   - fixed -o output (thanks to www417)
+   - warning if HYDRA_PROXY is defined but the module does not use it
+   - fixed an issue with large input files and long entries
+* hydra library:
+   - SSL connections are now fixed to SSLv3 as some SSL servers fail otherwise, report if this gives you problems
+   - removed support for old OPENSSL libraries
+* HTTP Form module:
+   - login and password values are now encoded if special characters are present
+   - ^USER^ and ^PASS^ are now also supported in H= header values
+   - if you the colon as a value in your option string, you can now escape it with \: - but do not encode a \ with \\
+* Mysql module: protocol 10 is now supported
+* SMTP, POP3, IMAP modules: Disabled the TLS in default. TLS must now be
+  defined as an option "TLS" if required. This increases performance.
+* Cisco module: fixed a small bug (thanks to Vitaly McLain)
+* Postgres module: libraries on Cygwin are buggy at the moment, module is therefore
+  disabled on Cygwin
+
+
 Release 7.4.x FIX RELEASES for bugs introduced in 7.4
 * Quickfix for people who do not have libssh installed (won't compile otherwise)
 * Quickfix for http-get/http-head and irc module which would not run due a new feature.
