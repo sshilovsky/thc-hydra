@@ -7,8 +7,6 @@ unsigned char *buf;
 int counter;
 int tls_required = 0;
 
-char *strrep(char *string, char *oldpiece, char *newpiece);
-
 int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp, char version, int auth_method) {
   char *empty = "";
   char *login = "", *pass;
@@ -37,7 +35,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
   case AUTH_CLEAR:
     length = 14 + strlen(login) + strlen(pass);
     break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_CRAMMD5:
     length = 14 + strlen(miscptr) + strlen("CRAM-MD5") + 2;
     break;
@@ -113,7 +111,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     free(buf);
     return 3;
   }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
 
 /* one more step auth for CRAM and DIGEST */
   if (ldap_auth_mechanism == AUTH_CRAMMD5) {
@@ -127,7 +125,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
       return 1;
     counter++;
     if (strstr(miscptr, "^USER^") != NULL) {
-      miscptr = strrep(miscptr, "^USER^", login);
+      miscptr = hydra_strrep(miscptr, "^USER^", login);
     }
 
     length = 12 + strlen(miscptr) + 4 + strlen("CRAM-MD5") + 2 + strlen(login) + 1 + strlen(buf2);
@@ -175,7 +173,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
       counter++;
       if (strstr(miscptr, "^USER^") != NULL) {
-        miscptr = strrep(miscptr, "^USER^", login);
+        miscptr = hydra_strrep(miscptr, "^USER^", login);
       }
 
       sasl_digest_md5(buffer2, login, pass, ptr, miscptr, "ldap", NULL, 0, NULL);

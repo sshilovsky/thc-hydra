@@ -34,7 +34,7 @@ It's particularly true on windows XP
 
 */
 
-#ifndef LIBOPENSSLNEW
+#ifndef LIBOPENSSL
 #include <stdio.h>
 void dummy_rdp() {
   printf("\n");
@@ -1577,7 +1577,7 @@ void sec_process_mcs_data(STREAM s) {
 /* Receive secure transport packet */
 STREAM sec_recv(uint8 * rdpver) {
   uint32 sec_flags;
-  uint16 channel;
+  uint16 channel = 0	;
   STREAM s;
 
   while ((s = mcs_recv(&channel, rdpver)) != NULL) {
@@ -1664,6 +1664,7 @@ BOOL sec_connect(char *server, char *username, BOOL reconnect) {
   if (g_encryption)
     sec_establish_key();
   free(mcs_data.data);
+  mcs_data.data = NULL;
   return True;
 }
 

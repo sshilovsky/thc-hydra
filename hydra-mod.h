@@ -35,6 +35,7 @@ extern char *hydra_address2string(char *address);
 extern char *hydra_strcasestr(const char *haystack, const char *needle);
 extern void hydra_dump_data(unsigned char *buf, int len, char *text);
 extern int hydra_memsearch(char *haystack, int hlen, char *needle, int nlen);
+extern char *hydra_strrep(char *string, char *oldpiece, char *newpiece);
 
 #ifdef HAVE_PCRE
 int hydra_string_match(char *str, const char *regex);

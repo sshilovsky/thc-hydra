@@ -107,7 +107,7 @@ int start_imap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     sprintf(buffer, "%.250s\r\n", buffer);
     break;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_CRAMMD5:
   case AUTH_CRAMSHA1:
   case AUTH_CRAMSHA256:{
@@ -344,7 +344,7 @@ int start_imap(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
 void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1, sock = -1;
-  int myport = PORT_IMAP, mysslport = PORT_IMAP_SSL, disable_tls = 0;
+  int myport = PORT_IMAP, mysslport = PORT_IMAP_SSL, disable_tls = 1;
   char *buffer1 = "1 CAPABILITY\r\n";
 
   hydra_register_socket(sp);
@@ -390,7 +390,19 @@ void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       if (buf == NULL) {
         hydra_child_exit(2);
       }
-#ifdef LIBOPENSSLNEW
+
+      if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
+        int i;
+
+        for (i = 0; i < strlen(miscptr); i++)
+          miscptr[i] = (char) toupper((int) miscptr[i]);
+
+        if (strstr(miscptr, "TLS") || strstr(miscptr, "SSL")) {
+          disable_tls = 0;
+        }
+      }
+
+#ifdef LIBOPENSSL
       if (!disable_tls) {
 	/* check for STARTTLS, if available we may have access to more basic auth methods */
 	if (strstr(buf, "STARTTLS") != NULL) {
@@ -420,7 +432,8 @@ void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
             if (buf == NULL)
               hydra_child_exit(2);
           }
-	}
+	} else
+          hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
       }
 #endif
 
@@ -432,7 +445,7 @@ void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       if ((strstr(buf, "=LOGIN") == NULL) && (strstr(buf, "=NTLM") != NULL)) {
         imap_auth_mechanism = AUTH_NTLM;
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if ((strstr(buf, "=LOGIN") == NULL) && (strstr(buf, "=SCRAM-SHA-1") != NULL)) {
         imap_auth_mechanism = AUTH_SCRAMSHA1;
       }
@@ -463,38 +476,34 @@ void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       free(buf);
 
       if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
-        int i;
 
-        for (i = 0; i < strlen(miscptr); i++)
-          miscptr[i] = (char) toupper((int) miscptr[i]);
-
-        if (strncmp(miscptr, "CLEAR", 5) == 0)
+        if (strstr(miscptr, "CLEAR"))
           imap_auth_mechanism = AUTH_CLEAR;
 
-        if (strncmp(miscptr, "LOGIN", 5) == 0)
+        if (strstr(miscptr, "LOGIN"))
           imap_auth_mechanism = AUTH_LOGIN;
 
-        if (strncmp(miscptr, "PLAIN", 5) == 0)
+        if (strstr(miscptr, "PLAIN"))
           imap_auth_mechanism = AUTH_PLAIN;
 
-#ifdef LIBOPENSSLNEW
-        if (strncmp(miscptr, "CRAM-MD5", 8) == 0)
+#ifdef LIBOPENSSL
+        if (strstr(miscptr, "CRAM-MD5"))
           imap_auth_mechanism = AUTH_CRAMMD5;
 
-        if (strncmp(miscptr, "CRAM-SHA1", 9) == 0)
+        if (strstr(miscptr, "CRAM-SHA1"))
           imap_auth_mechanism = AUTH_CRAMSHA1;
 
-        if (strncmp(miscptr, "CRAM-SHA256", 11) == 0)
+        if (strstr(miscptr, "CRAM-SHA256"))
           imap_auth_mechanism = AUTH_CRAMSHA256;
 
-        if (strncmp(miscptr, "DIGEST-MD5", 10) == 0)
+        if (strstr(miscptr, "DIGEST-MD5"))
           imap_auth_mechanism = AUTH_DIGESTMD5;
 
-        if (strncmp(miscptr, "SCRAM-SHA1", 10) == 0)
+        if (strstr(miscptr, "SCRAM-SHA1"))
           imap_auth_mechanism = AUTH_SCRAMSHA1;
 
 #endif
-        if (strncmp(miscptr, "NTLM", 4) == 0)
+        if (strstr(miscptr, "NTLM"))
           imap_auth_mechanism = AUTH_NTLM;
       }
 
@@ -509,7 +518,7 @@ void service_imap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
         case AUTH_PLAIN:
           hydra_report(stderr, "[VERBOSE] using IMAP PLAIN AUTH mechanism\n");
           break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         case AUTH_CRAMMD5:
           hydra_report(stderr, "[VERBOSE] using IMAP CRAM-MD5 AUTH mechanism\n");
           break;

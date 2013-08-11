@@ -8,7 +8,7 @@ find a big list on the Internet
 */
 
 #include "hydra-mod.h"
-#ifndef LIBOPENSSLNEW
+#ifndef LIBOPENSSL
 #include <stdio.h>
 void dummy_oracle_sid() {
   printf("\n");

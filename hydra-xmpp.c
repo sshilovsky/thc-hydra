@@ -120,7 +120,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
         }
       }
       break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
     case AUTH_PLAIN:{
         memset(buffer2, 0, sizeof(buffer));
         sasl_plain(buffer2, login, pass);
@@ -384,7 +384,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
         if (strncmp(miscptr, "PLAIN", 5) == 0)
           xmpp_auth_mechanism = AUTH_PLAIN;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         if (strncmp(miscptr, "CRAM-MD5", 8) == 0)
           xmpp_auth_mechanism = AUTH_CRAMMD5;
 
@@ -404,7 +404,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
         case AUTH_PLAIN:
           hydra_report(stderr, "[VERBOSE] using XMPP PLAIN AUTH mechanism\n");
           break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         case AUTH_CRAMMD5:
           hydra_report(stderr, "[VERBOSE] using XMPP CRAM-MD5 AUTH mechanism\n");
           break;
@@ -417,7 +417,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
 #endif
         }            
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       //check if tls is not wanted and if tls is available
       if (!disable_tls && tls) {
         char *STARTTLS = "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>";

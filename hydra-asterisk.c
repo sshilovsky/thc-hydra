@@ -1,6 +1,7 @@
 //This plugin was written by david@
 //
-//This plugin is written for VMware Authentication Daemon
+//This plugin is written for Asterisk Call Manager
+//which is running by default on TCP/5038
 //
 
 #include "hydra-mod.h"
@@ -10,9 +11,9 @@ extern char *HYDRA_EXIT;
 
 char *buf;
 
-int start_vmauthd(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp) {
+int start_asterisk(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp) {
   char *empty = "\"\"";
-  char *login, *pass, buffer[300];
+  char *login, *pass, buffer[1024];
 
   if (strlen(login = hydra_get_next_login()) == 0)
     login = empty;
@@ -24,33 +25,29 @@ int start_vmauthd(int s, char *ip, int port, unsigned char options, char *miscpt
       return (1);
     free(buf);
   }
+  memset(buffer, 0, sizeof(buffer));
+  sprintf(buffer, "Action: Login\r\nUsername: %.250s\r\nSecret: %.250s\r\n\r\n", login, pass);
 
-  sprintf(buffer, "USER %.250s\r\n", login);
+  if (verbose || debug)
+    hydra_report(stderr, "[VERBOSE] C: %s\n", buffer);
+
   if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
     return 1;
   }
   if ((buf = hydra_receive_line(s)) == NULL)
-    return (1);
-  if (strncmp(buf, "331 ", 4) != 0) {
-    hydra_report(stderr, "[ERROR] vmware authd protocol or service shutdown: %s\n", buf);
+    return 1;
+
+  if (verbose || debug)
+    hydra_report(stderr, "[VERBOSE] S: %s\n", buf);
+
+  if (buf == NULL || (strstr(buf, "Response: ") == NULL)) {
+    hydra_report(stderr, "[ERROR] Asterisk Call Manager protocol error or service shutdown: %s\n", buf);
     free(buf);
-    return (3);
+    return 4;
   }
-  free(buf);
 
-  sprintf(buffer, "PASS %.250s\r\n", pass);
-  if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
-    return 1;
-  }
-  if ((buf = hydra_receive_line(s)) == NULL)
-    return (1);
-
-//fprintf(stderr, "%s\n", buf);
-//230 User test logged in.
-//530 Login incorrect.
-
-  if (strncmp(buf, "230 ", 4) == 0) {
-    hydra_report_found_host(port, ip, "vmauthd", fp);
+  if (strstr(buf, "Response: Success") != NULL) {
+    hydra_report_found_host(port, ip, "asterisk", fp);
     hydra_completed_pair_found();
     free(buf);
     if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
@@ -65,9 +62,9 @@ int start_vmauthd(int s, char *ip, int port, unsigned char options, char *miscpt
   return 2;
 }
 
-void service_vmauthd(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
+void service_asterisk(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1, sock = -1;
-  int myport = PORT_VMAUTHD, mysslport = PORT_VMAUTHD_SSL;
+  int myport = PORT_ASTERISK, mysslport = PORT_ASTERISK_SSL;
 
   hydra_register_socket(sp);
   if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
@@ -96,38 +93,21 @@ void service_vmauthd(char *ip, int sp, unsigned char options, char *miscptr, FIL
         hydra_child_exit(1);
       }
       buf = hydra_receive_line(sock);
-//fprintf(stderr, "%s\n",buf);
-//220 VMware Authentication Daemon Version 1.00
-//220 VMware Authentication Daemon Version 1.10: SSL Required
-//220 VMware Authentication Daemon Version 1.10: SSL Required, ServerDaemonProtocol:SOAP, MKSDisplayProtocol:VNC ,
+      //fprintf(stderr, "%s\n",buf);
+      //banner should look like:
+      //Asterisk Call Manager/1.1
 
-      if (buf == NULL || strstr(buf, "220 VMware Authentication Daemon Version ") == NULL) {
+      if (buf == NULL || strstr(buf, "Asterisk Call Manager/") == NULL) {
         /* check the first line */
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an vmware authd protocol or service shutdown: %s\n", buf);
+        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an Asterisk Call Manager protocol or service shutdown: %s\n", buf);
         hydra_child_exit(2);
-      }
-      if ((strstr(buf, "Version 1.00") == NULL) && (strstr(buf, "Version 1.10") == NULL)) {
-        free(buf);
-        hydra_report(stderr, "[ERROR] this vmware authd protocol is not supported, please report: %s\n", buf);
-        hydra_child_exit(2);
-      }
-      //by default this service is waiting for ssl connections      
-      if (strstr(buf, "SSL Required") != NULL) {
-        if ((options & OPTION_SSL) == 0) {
-          //reconnecting using SSL
-          if (hydra_connect_to_ssl(sock) == -1) {
-            free(buf);
-            hydra_report(stderr, "[ERROR] Can't use SSL\n");
-            hydra_child_exit(2);
-          }
-        }
       }
       free(buf);
 
       next_run = 2;
       break;
     case 2:                    /* run the cracking function */
-      next_run = start_vmauthd(sock, ip, port, options, miscptr, fp);
+      next_run = start_asterisk(sock, ip, port, options, miscptr, fp);
       break;
     case 3:                    /* clean exit */
       if (sock >= 0)
@@ -141,7 +121,7 @@ void service_vmauthd(char *ip, int sp, unsigned char options, char *miscptr, FIL
   }
 }
 
-int service_vmauthd_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_asterisk_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

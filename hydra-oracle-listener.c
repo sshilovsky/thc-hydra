@@ -11,7 +11,7 @@ at http://marcellmajor.com/frame_listenerhash.html
 */
 
 #include "hydra-mod.h"
-#ifndef LIBOPENSSLNEW
+#ifndef LIBOPENSSL
 #include <stdio.h>
 void dummy_oracle_listener() {
   printf("\n");

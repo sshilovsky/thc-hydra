@@ -136,11 +136,12 @@ if [ "X" = "X$SSL_IPATH" ]; then
     SSL_PATH=""
     CRYPTO_PATH=""
 fi
-if [ -n "$SSL_PATH" ]; then
+if [  -n "$SSL_PATH" -a "X" = "X$SSLNEW" ]; then
+    echo "                                                       ... found but OLD"
+    echo "NOTE: your OpenSSL package is outdated, update it!"
+fi
+if [ -n "$SSL_PATH" -a '!' "X" = "X$SSLNEW" ]; then
     echo "                                                       ... found"
-  if [ "X" = "X$SSLNEW" ]; then
-    echo "NOTE: your OpenSSL package is outdated, update for more hydra feature!"
-  fi
 fi
 if [ "X" = "X$SSL_PATH" ]; then
     echo "                                                       ... NOT found, SSL support disabled"
@@ -263,7 +264,12 @@ if [ "X" = "X$PCRE_PATH" -o "X" = "X$PCRE_IPATH" ]; then
 fi
 
 echo "Checking for Postgres (libpq.so, libpq-fe.h) ..."
-for i in $LIBDIRS ; do
+if [ "$SYSO" = "Cygwin" ]; then
+    echo "                                             ... DISABLED - postgres is buggy in Cygwin at the moment"
+    POSTGRES_PATH=""
+    POSTGRES_IPATH=""
+else
+  for i in $LIBDIRS ; do
     if [ "X" = "X$POSTGRES_PATH" ]; then
         if [ -f "$i/libpq.so" -o -f "$i/libpq.dylib" -o -f "$i/libpq.a" ]; then
             POSTGRES_PATH="$i"
@@ -281,11 +287,11 @@ for i in $LIBDIRS ; do
           POSTGRES_PATH="$i"
         fi
     fi
-done
-POSTGRES_IPATH=
-for i in $INCDIRS \
-  /opt/p*sql*/include /usr/*p*sql*/include /usr/local/*psql*/include
-do
+  done
+  POSTGRES_IPATH=
+  for i in $INCDIRS \
+    /opt/p*sql*/include /usr/*p*sql*/include /usr/local/*psql*/include
+  do
     if [ "X" = "X$POSTGRES_IPATH" ]; then
         if [ -f "$i/libpq-fe.h" ]; then
             POSTGRES_IPATH="$i"
@@ -297,15 +303,16 @@ do
             POSTGRES_IPATH="$i/postgresql"
         fi
     fi
-done
+  done
 
-if [ -n "$POSTGRES_PATH" -a -n "$POSTGRES_IPATH" ]; then
+  if [ -n "$POSTGRES_PATH" -a -n "$POSTGRES_IPATH" ]; then
     echo "                                             ... found"
-fi
-if [ "X" = "X$POSTGRES_PATH" -o "X" = "X$POSTGRES_IPATH" ]; then
+  fi
+  if [ "X" = "X$POSTGRES_PATH" -o "X" = "X$POSTGRES_IPATH" ]; then
     echo "                                             ... NOT found, module postgres disabled"
     POSTGRES_PATH=""
     POSTGRES_IPATH=""
+  fi
 fi
 
 echo "Checking for SVN (libsvn_client-1 libapr-1.so libaprutil-1.so) ..."
@@ -794,6 +801,28 @@ if [ "$SYSS" = "SunOS" ]; then
     echo
 fi
 
+echo "Checking for Android specialities ..."
+TMPC=comptest$$
+RINDEX=" not"
+echo '#include <stdio.h>' > $TMPC.c
+echo '#include <strings.h>' >> $TMPC.c
+echo "int main() { char *x = rindex(\"test\", 'e'); if (x == NULL) return 0; else return 1; }" >> $TMPC.c
+gcc -o $TMPC $TMPC.c > /dev/null 2>&1
+test -x $TMPC && RINDEX=""
+rm -f $TMPC $TMPC.c
+echo "                                  ... rindex()$RINDEX found"
+if [ -n "$CRYPTO_PATH" ]; then
+  RSA=" not"
+  echo '#include <stdio.h>' > $TMPC.c
+  echo '#include <openssl/rsa.h>' >> $TMPC.c
+  echo "int main() { RSA *rsa = RSA_generate_key(1024, RSA_F4, NULL, NULL); if (rsa == NULL) return 0; else return 1; }" >> $TMPC.c
+#echo "int main() { RSA *rsa; RSA_generate_key_ex(rsa, 1024, 0, NULL); if (rsa == NULL) return 0; else return 1; }" >> $TMPC.c
+  gcc -o $TMPC $TMPC.c -lssl -lcrypto > /dev/null 2>&1
+  test -x $TMPC && RSA=""
+  rm -f $TMPC $TMPC.c
+  echo "                                  ... RSA_generate_key()$RSA found"
+fi
+
 echo
 XDEFINES=""
 XLIBS=""
@@ -804,9 +833,8 @@ if [ -n "$FIREBIRD_PATH" -o -n "$PCRE_PATH" -o -n "$IDN_PATH" -o -n "$SSL_PATH" 
     XLIBPATHS="-L/usr/lib -L/usr/local/lib -L/lib"
 fi
 if [ -n "$SSL_PATH" ]; then
-    XDEFINES="$XDEFINES -DLIBOPENSSL"
     if [ -n "$SSLNEW" ]; then
-        XDEFINES="$XDEFINES -DLIBOPENSSLNEW"
+        XDEFINES="$XDEFINES -DLIBOPENSSL"
     fi
 fi
 if [ -n "$CURSES_PATH" ]; then
@@ -844,6 +872,12 @@ if [ -n "$SVN_PATH" ]; then
 fi
 if [ -n "$SSH_PATH" ]; then
     XDEFINES="$XDEFINES -DLIBSSH"
+fi
+if [ -n "$RINDEX" ]; then
+    XDEFINES="$XDEFINES -DNO_RINDEX"
+fi
+if [ -n "$RSA" ]; then
+    XDEFINES="$XDEFINES -DNO_RSA_LEGACY"
 fi
 OLDPATH=""
 for i in $SSL_PATH $CRYPTO_PATH $SSH_PATH $NSL_PATH $SOCKET_PATH $RESOLV_PATH $SAPR3_PATH $POSTGRES_PATH $SVN_PATH $NCP_PATH $CURSES_PATH $ORACLE_PATH $AFP_PATH $MYSQL_PATH; do

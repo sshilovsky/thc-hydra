@@ -201,7 +201,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   char *empty = "\"\"", *ptr, *login, *pass, buffer[1024], buf[1024], hash[64], key[256], salt[8];
   int i, j, k, size, off = 0, off2 = 0, done = 0;
   unsigned char initVect[8], privacy_params[8];
-  int engine_boots;
+  int engine_boots = 0;
 #ifdef LIBOPENSSL
   DES_key_schedule symcbc;  
 #endif
@@ -469,7 +469,7 @@ if (debug) printf("[DEBUG] buf[%d + 15] %d\n", off, buf[off + 15]);
 }
 
 void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
-  int run = 1, next_run = 1, sock = -1, i;
+  int run = 1, next_run = 1, sock = -1, i = 0;
   int myport = PORT_SNMP;
   char *lptr;
 

@@ -23,7 +23,14 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
   if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
     return 1;
   }
-  buf = hydra_receive_line(s);
+  sleep(1);
+  do {
+    buf = hydra_receive_line(s);
+    if (buf[strlen(buf) - 1] == '\n')
+      buf[strlen(buf) - 1] = 0;
+    if (buf[strlen(buf) - 1] == '\r')
+      buf[strlen(buf) - 1] = 0;
+  } while (strlen(buf) <= 1);
   if (strstr(buf, "assw") != NULL) {
     hydra_completed_pair();
     free(buf);
@@ -41,7 +48,13 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
     if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
       return 1;
     }
-    buf = hydra_receive_line(s);
+    do {
+      buf = hydra_receive_line(s);
+      if (buf[strlen(buf) - 1] == '\n')
+        buf[strlen(buf) - 1] = 0;
+      if (buf[strlen(buf) - 1] == '\r')
+        buf[strlen(buf) - 1] = 0;
+    } while (strlen(buf) <= 1);
     if (buf != NULL && strstr(buf, "assw") != NULL) {
       hydra_completed_pair();
       free(buf);
@@ -59,12 +72,18 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
       if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
         return 1;
       }
-      buf = hydra_receive_line(s);
+      do {
+        buf = hydra_receive_line(s);
+        if (buf[strlen(buf) - 1] == '\n')
+          buf[strlen(buf) - 1] = 0;
+        if (buf[strlen(buf) - 1] == '\r')
+          buf[strlen(buf) - 1] = 0;
+      } while (strlen(buf) <= 1);
     }
 
   }
 
-  if (buf != NULL && (strstr(buf, "assw") != NULL || strstr(buf, "ad ") != NULL || strstr(buf, "attempt") != NULL || strstr(buf, "fail") != NULL)) {
+  if (buf != NULL && (strstr(buf, "assw") != NULL || strstr(buf, "ad ") != NULL || strstr(buf, "attempt") != NULL || strstr(buf, "ailur") != NULL)) {
     free(buf);
     hydra_completed_pair();
     if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)

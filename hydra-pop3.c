@@ -132,7 +132,7 @@ int start_pop3(int s, char *ip, int port, unsigned char options, char *miscptr, 
   }
 
   switch (p->pop3_auth_mechanism) {
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_APOP:{
       MD5_CTX c;
       unsigned char md5_raw[MD5_DIGEST_LENGTH];
@@ -208,7 +208,7 @@ int start_pop3(int s, char *ip, int port, unsigned char options, char *miscptr, 
     }
     break;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_CRAMMD5:
   case AUTH_CRAMSHA1:
   case AUTH_CRAMSHA256:{
@@ -457,7 +457,7 @@ void service_pop3(char *ip, int sp, unsigned char options, char *miscptr, FILE *
        }
        free(buf);
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
        if (!p->disable_tls) {
 	 /* check for STARTTLS, if available we may have access to more basic auth methods */
          hydra_send(sock, "STLS\r\n", strlen("STLS\r\n"), 0);
@@ -512,7 +512,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   pool p;
 
   p.pop3_auth_mechanism=AUTH_CLEAR;
-  p.disable_tls = 0;
+  p.disable_tls = 1;
   memcpy(p.ip, ip, 36);
 
   if (sock >= 0)
@@ -562,7 +562,20 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
     hydra_report(stderr, "[ERROR] No answer from CAPABILITY request\n");
     return -1;
   }
-#ifdef LIBOPENSSLNEW
+
+  if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
+    int i;
+
+    for (i = 0; i < strlen(miscptr); i++)
+      miscptr[i] = (char) toupper((int) miscptr[i]);
+
+    if (strstr(miscptr, "TLS") || strstr(miscptr, "SSL")) {
+      p.disable_tls = 0;
+    }
+  }
+
+
+#ifdef LIBOPENSSL
   if (!p.disable_tls) {
     /* check for STARTTLS, if available we may have access to more basic auth methods */
     if (strstr(buf, "STLS") != NULL) {
@@ -595,7 +608,8 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
           }
 	}
       }
-    }
+    } else
+      hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
   }
 #endif
 
@@ -631,7 +645,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   if ((strstr(buf, " LOGIN") == NULL) && (strstr(buf, "NTLM") != NULL)) {
     p.pop3_auth_mechanism = AUTH_NTLM;
   }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   if ((strstr(buf, " LOGIN") == NULL) && (strstr(buf, "DIGEST-MD5") != NULL)) {
     p.pop3_auth_mechanism = AUTH_DIGESTMD5;
   }
@@ -658,7 +672,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   }
 
   if (strstr(buf, "SASL") == NULL) {
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
     if (strlen(apop_challenge) == 0) {
       p.pop3_auth_mechanism = AUTH_CLEAR;
     } else {
@@ -672,38 +686,34 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   free(buf);
 
   if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
-    int i;
 
-    for (i = 0; i < strlen(miscptr); i++)
-      miscptr[i] = (char) toupper((int) miscptr[i]);
-
-    if (strncmp(miscptr, "CLEAR", 5) == 0)
+    if (strstr(miscptr, "CLEAR"))
       p.pop3_auth_mechanism = AUTH_CLEAR;
 
-    if (strncmp(miscptr, "LOGIN", 5) == 0)
+    if (strstr(miscptr, "LOGIN"))
       p.pop3_auth_mechanism = AUTH_LOGIN;
 
-    if (strncmp(miscptr, "PLAIN", 5) == 0)
+    if (strstr(miscptr, "PLAIN"))
       p.pop3_auth_mechanism = AUTH_PLAIN;
 
-#ifdef LIBOPENSSLNEW
-    if (strncmp(miscptr, "APOP", 4) == 0)
+#ifdef LIBOPENSSL
+    if (strstr(miscptr, "APOP"))
       p.pop3_auth_mechanism = AUTH_APOP;
 
-    if (strncmp(miscptr, "CRAM-MD5", 8) == 0)
+    if (strstr(miscptr, "CRAM-MD5"))
       p.pop3_auth_mechanism = AUTH_CRAMMD5;
 
-    if (strncmp(miscptr, "CRAM-SHA1", 9) == 0)
+    if (strstr(miscptr, "CRAM-SHA1"))
       p.pop3_auth_mechanism = AUTH_CRAMSHA1;
 
-    if (strncmp(miscptr, "CRAM-SHA256", 11) == 0)
+    if (strstr(miscptr, "CRAM-SHA256"))
       p.pop3_auth_mechanism = AUTH_CRAMSHA256;
 
-    if (strncmp(miscptr, "DIGEST-MD5", 10) == 0)
+    if (strstr(miscptr, "DIGEST-MD5"))
       p.pop3_auth_mechanism = AUTH_DIGESTMD5;
 #endif
 
-    if (strncmp(miscptr, "NTLM", 4) == 0)
+    if (strstr(miscptr, "NTLM"))
       p.pop3_auth_mechanism = AUTH_NTLM;
 
   }
@@ -720,7 +730,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
       hydra_report(stderr, "[VERBOSE] using POP3 PLAIN AUTH mechanism\n");
       break;
     case AUTH_APOP:
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if (strlen(apop_challenge) == 0) {
         hydra_report(stderr, "[VERBOSE] APOP not supported by server, using clear login\n");
         p.pop3_auth_mechanism = AUTH_CLEAR;
@@ -731,7 +741,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
       p.pop3_auth_mechanism = AUTH_CLEAR;
 #endif
       break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
     case AUTH_CRAMMD5:
       hydra_report(stderr, "[VERBOSE] using POP3 CRAM-MD5 AUTH mechanism\n");
       break;

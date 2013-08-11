@@ -32,7 +32,11 @@ char *nntp_read_server_capacity(int sock) {
           buf[strlen(buf) - 1] = 0;
         if (buf[strlen(buf) - 1] == '\r')
           buf[strlen(buf) - 1] = 0;
+#ifdef NO_RINDEX
+        if ((ptr = strrchr(buf, '\n')) != NULL) {
+#else
         if ((ptr = rindex(buf, '\n')) != NULL) {
+#endif
           ptr++;
           if (isdigit((int) *ptr) && *(ptr + 3) == ' ')
             resp = 1;
@@ -107,7 +111,7 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
     sasl_plain(buffer, login, pass);
     sprintf(buffer, "%.250s\r\n", buffer);
     break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_CRAMMD5:{
       int rc = 0;
       char *preplogin;
@@ -295,7 +299,7 @@ void service_nntp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       if (buf == NULL) {
         hydra_child_exit(2);
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if (!disable_tls) {
 	/* if we got a positive answer */
 	if (strstr(buf, "STARTTLS") != NULL) {
@@ -346,7 +350,7 @@ SASL PLAIN DIGEST-MD5 LOGIN NTLM CRAM-MD5
 #endif
         nntp_auth_mechanism = AUTH_NTLM;
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
 
 #ifdef HAVE_PCRE
       if (hydra_string_match(buf, "SASL\\s.*DIGEST-MD5")) {
@@ -398,7 +402,7 @@ SASL PLAIN DIGEST-MD5 LOGIN NTLM CRAM-MD5
         if (strncmp(miscptr, "PLAIN", 5) == 0)
           nntp_auth_mechanism = AUTH_PLAIN;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         if (strncmp(miscptr, "CRAM-MD5", 8) == 0)
           nntp_auth_mechanism = AUTH_CRAMMD5;
 
@@ -421,7 +425,7 @@ SASL PLAIN DIGEST-MD5 LOGIN NTLM CRAM-MD5
         case AUTH_PLAIN:
           hydra_report(stderr, "[VERBOSE] using NNTP PLAIN AUTH mechanism\n");
           break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         case AUTH_CRAMMD5:
           hydra_report(stderr, "[VERBOSE] using NNTP CRAM-MD5 AUTH mechanism\n");
           break;

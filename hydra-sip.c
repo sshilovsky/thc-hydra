@@ -5,7 +5,7 @@
  *
  * 05042011 david: modified to use sasl lib
  */
-#ifndef LIBOPENSSLNEW
+#ifndef LIBOPENSSL
 #include <stdio.h>
 void dummy_sip() {
   printf("\n");

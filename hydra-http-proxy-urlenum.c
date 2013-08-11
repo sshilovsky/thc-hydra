@@ -156,7 +156,7 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
         if (buf == NULL)
           return 1;
       } else {
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         if (hydra_strcasestr(buf, "Proxy-Authenticate: Digest") != NULL) {
           char *pbuffer;
 

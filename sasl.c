@@ -108,7 +108,7 @@ void sasl_plain(char *result, char *login, char *pass) {
   free(preppasswd);
 }
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
 
 /*
 

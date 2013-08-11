@@ -23,7 +23,11 @@ char *smtp_read_server_capacity(int sock) {
           buf[strlen(buf) - 1] = 0;
         if (buf[strlen(buf) - 1] == '\r')
           buf[strlen(buf) - 1] = 0;
+#ifdef NO_RINDEX
+        if ((ptr = strrchr(buf, '\n')) != NULL) {
+#else
         if ((ptr = rindex(buf, '\n')) != NULL) {
+#endif
           ptr++;
           if (isdigit((int) *ptr) && *(ptr + 3) == ' ')
             resp = 1;
@@ -70,7 +74,7 @@ int start_smtp(int s, char *ip, int port, unsigned char options, char *miscptr, 
     sprintf(buffer, "%.250s\r\n", buffer);
     break;
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   case AUTH_CRAMMD5:{
       int rc = 0;
       char *preplogin;
@@ -209,7 +213,7 @@ int start_smtp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if ((buf = hydra_receive_line(s)) == NULL)
     return (1);
 
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
   if (smtp_auth_mechanism == AUTH_DIGESTMD5) {
     if (strstr(buf, "334") != NULL) {
       memset(buffer2, 0, sizeof(buffer2));
@@ -245,7 +249,7 @@ int start_smtp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
 void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1, sock = -1, i = 0;
-  int myport = PORT_SMTP, mysslport = PORT_SMTP_SSL, disable_tls = 0;
+  int myport = PORT_SMTP, mysslport = PORT_SMTP_SSL, disable_tls = 1;
 
   char *buffer1 = "EHLO hydra\r\n";
   char *buffer2 = "HELO hydra\r\n";
@@ -297,7 +301,16 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       if (buf == NULL)
         hydra_child_exit(2);
 
-#ifdef LIBOPENSSLNEW      
+      if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
+        for (i = 0; i < strlen(miscptr); i++)
+          miscptr[i] = (char) toupper((int) miscptr[i]);
+
+        if (strstr(miscptr, "TLS") || strstr(miscptr, "SSL")) {
+          disable_tls = 0;
+        }
+      }
+
+#ifdef LIBOPENSSL      
       if (!disable_tls) {
 	/* if we got a positive answer */
 	if (buf[0] == '2') {
@@ -326,8 +339,10 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
               if (buf == NULL)
         	hydra_child_exit(2);
             }
-          }
-	}
+          } else
+            hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
+	} else
+          hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
       }
 #endif
 
@@ -345,7 +360,7 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       if ((strstr(buf, "LOGIN") == NULL) && (strstr(buf, "NTLM") != NULL)) {
         smtp_auth_mechanism = AUTH_NTLM;
       }
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
       if ((strstr(buf, "LOGIN") == NULL) && (strstr(buf, "DIGEST-MD5") != NULL)) {
         smtp_auth_mechanism = AUTH_DIGESTMD5;
       }
@@ -359,28 +374,28 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
         smtp_auth_mechanism = AUTH_PLAIN;
       }
 
-      if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
-        for (i = 0; i < strlen(miscptr); i++)
-          miscptr[i] = (char) toupper((int) miscptr[i]);
 
-        if (strncmp(miscptr, "LOGIN", 5) == 0)
+      if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
+
+        if (strstr(miscptr, "LOGIN"))
           smtp_auth_mechanism = AUTH_LOGIN;
 
-        if (strncmp(miscptr, "PLAIN", 5) == 0)
+        if (strstr(miscptr, "PLAIN"))
           smtp_auth_mechanism = AUTH_PLAIN;
 
-#ifdef LIBOPENSSLNEW
-        if (strncmp(miscptr, "CRAM-MD5", 8) == 0)
+#ifdef LIBOPENSSL
+        if (strstr(miscptr, "CRAM-MD5"))
           smtp_auth_mechanism = AUTH_CRAMMD5;
 
-        if (strncmp(miscptr, "DIGEST-MD5", 10) == 0)
+        if (strstr(miscptr, "DIGEST-MD5"))
           smtp_auth_mechanism = AUTH_DIGESTMD5;
 #endif
 
-        if (strncmp(miscptr, "NTLM", 4) == 0)
+        if (strstr(miscptr, "NTLM"))
           smtp_auth_mechanism = AUTH_NTLM;
 
       }
+
       if (verbose) {
         switch (smtp_auth_mechanism) {
         case AUTH_LOGIN:
@@ -389,7 +404,7 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
         case AUTH_PLAIN:
           hydra_report(stderr, "[VERBOSE] using SMTP PLAIN AUTH mechanism\n");
           break;
-#ifdef LIBOPENSSLNEW
+#ifdef LIBOPENSSL
         case AUTH_CRAMMD5:
           hydra_report(stderr, "[VERBOSE] using SMTP CRAM-MD5 AUTH mechanism\n");
           break;

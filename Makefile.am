@@ -1,5 +1,5 @@
 #
-# Makefile for Hydra - (c) 2001-2012 by van Hauser / THC <vh@thc.org>
+# Makefile for Hydra - (c) 2001-2013 by van Hauser / THC <vh@thc.org>
 #
 OPTS=-I. -O3
 # -Wall -g -pedantic
@@ -13,7 +13,7 @@ SRC = hydra-vnc.c hydra-pcnfs.c hydra-rexec.c hydra-nntp.c hydra-socks5.c \
       hydra-snmp.c hydra-cvs.c hydra-smtp.c hydra-smtp-enum.c hydra-sapr3.c hydra-ssh.c \
       hydra-sshkey.c hydra-teamspeak.c hydra-postgres.c hydra-rsh.c hydra-rlogin.c \
       hydra-oracle-listener.c hydra-svn.c hydra-pcanywhere.c hydra-sip.c \
-      hydra-oracle.c hydra-vmauthd.c hydra-firebird.c hydra-afp.c hydra-ncp.c \
+      hydra-oracle.c hydra-vmauthd.c hydra-asterisk.c hydra-firebird.c hydra-afp.c hydra-ncp.c \
       hydra-oracle-sid.c hydra-http-proxy.c hydra-http-form.c hydra-irc.c \
       hydra-rdp.c crc32.c d3des.c bfg.c ntlm.c sasl.c hmacmd5.c hydra-mod.c
 OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
@@ -23,7 +23,7 @@ OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
       hydra-snmp.o hydra-cvs.o hydra-smtp.o hydra-smtp-enum.o hydra-sapr3.o hydra-ssh.o \
       hydra-sshkey.o hydra-teamspeak.o hydra-postgres.o hydra-rsh.o hydra-rlogin.o \
       hydra-oracle-listener.o hydra-svn.o hydra-pcanywhere.o hydra-sip.o \
-      hydra-oracle-sid.o hydra-oracle.o hydra-vmauthd.o hydra-firebird.o hydra-afp.o hydra-ncp.o \
+      hydra-oracle-sid.o hydra-oracle.o hydra-vmauthd.o hydra-asterisk.o hydra-firebird.o hydra-afp.o hydra-ncp.o \
       hydra-http-proxy.o hydra-http-form.o hydra-irc.o \
       hydra-rdp.o crc32.o d3des.o bfg.o ntlm.o sasl.o hmacmd5.o hydra-mod.o
 BINS = hydra pw-inspector
