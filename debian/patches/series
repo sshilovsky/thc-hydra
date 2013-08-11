@@ -1,5 +1,5 @@
 01_fix_include_libpq-dev.diff
-02_using_supported_protocols.diff
+02_using_supported_protos
 03_use_bin_path.diff
 04_fix_hyphen-used-as-minus-sign.diff
 05_add_option_to_cflag.diff
