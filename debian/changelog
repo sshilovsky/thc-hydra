@@ -1,3 +1,9 @@
+hydra (7.5-1kali1) kali; urgency=low
+
+  * Updated the license to AGPL
+
+ -- Devon Kearns <dookie@kali.org>  Sat, 10 Aug 2013 21:03:10 -0600
+
 hydra (7.5-1kali0) kali; urgency=low
 
   * Imported new upstream release.  (Closes: 0000181)
