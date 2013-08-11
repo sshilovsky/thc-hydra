@@ -1,3 +1,9 @@
+hydra (7.5-1kali0) kali; urgency=low
+
+  * Imported new upstream release.  (Closes: 0000181)
+
+ -- Devon Kearns <dookie@kali.org>  Sat, 10 Aug 2013 20:38:53 -0600
+
 hydra (7.4.2-2kali0) kali; urgency=low
 
   * Disabled dh_auto_clean and dh_clean, since they interfere with the package
