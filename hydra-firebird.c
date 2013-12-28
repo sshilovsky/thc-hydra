@@ -1,3 +1,4 @@
+
 /*
 
 Firebird Support - by David Maciejak @ GMAIL dot com
@@ -32,7 +33,7 @@ int start_firebird(int s, char *ip, int port, unsigned char options, char *miscp
   char database[256];
   char connection_string[1024];
 
-  isc_db_handle db;      /* database handle */
+  isc_db_handle db;             /* database handle */
   ISC_STATUS_ARRAY status;      /* status vector */
 
   char *dpb = NULL;             /* DB parameter buffer */
@@ -48,10 +49,10 @@ int start_firebird(int s, char *ip, int port, unsigned char options, char *miscp
   if (strlen(pass = hydra_get_next_password()) == 0)
     pass = empty;
 
-  dpb_length = (short)(1 + strlen(login) + 2 + strlen(pass) + 2);
-  if ((dpb = (char*)malloc(dpb_length)) == NULL) {
-     hydra_report(stderr, "[ERROR] Can't allocate memory\n");
-     return 1;
+  dpb_length = (short) (1 + strlen(login) + 2 + strlen(pass) + 2);
+  if ((dpb = (char *) malloc(dpb_length)) == NULL) {
+    hydra_report(stderr, "[ERROR] Can't allocate memory\n");
+    return 1;
   }
 
   /* Add user and password to dpb */
@@ -144,7 +145,7 @@ void service_firebird(char *ip, int sp, unsigned char options, char *miscptr, FI
 
 #endif
 
-int service_firebird_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_firebird_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

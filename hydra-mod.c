@@ -16,6 +16,7 @@
 #define SOCKS_V5	5
 #define SOCKS_V4	4
 #define SOCKS_NOAUTH	0
+
 /* http://tools.ietf.org/html/rfc1929 */
 #define SOCKS_PASSAUTH	2
 #define SOCKS_NOMETHOD	0xff
@@ -56,6 +57,7 @@ int my_select(int fd, fd_set * fdread, fd_set * fdwrite, fd_set * fdex, long sec
 void alarming() {
   fail++;
   alarm_went_off++;
+
 /* uh, I think it's not good for performance if we try to reconnect to a timeout system!
  *  if (fail > MAX_CONNECT_RETRY) {
  */
@@ -63,6 +65,7 @@ void alarming() {
   if (debug)
     printf("DEBUG_CONNECT_TIMEOUT\n");
   hydra_child_exit(1);
+
 /*
  *   } else {
  *     if (verbose) fprintf(stderr, "Process %d: Can not connect [timeout], retrying (%d of %d retries)\n", (int)getpid(), fail, MAX_CONNECT_RETRY);
@@ -79,6 +82,7 @@ void interrupt() {
 
 int internal__hydra_connect(char *host, int port, int protocol, int type) {
   int s, ret = -1, ipv6 = 0;
+
 #ifdef AF_INET6
   struct sockaddr_in6 target6;
   struct sockaddr_in6 sin6;
@@ -244,54 +248,53 @@ int internal__hydra_connect(char *host, int port, int protocol, int type) {
 #endif
 
       if (hydra_strcasestr(proxy_string_type, "connect") || hydra_strcasestr(proxy_string_type, "http")) {
-	if (proxy_authentication == NULL)
+        if (proxy_authentication == NULL)
           if (host[0] == 16)
             snprintf(buf, 4096, "CONNECT [%s]:%d HTTP/1.0\r\n\r\n", hydra_address2string(host), port);
           else
             snprintf(buf, 4096, "CONNECT %s:%d HTTP/1.0\r\n\r\n", hydra_address2string(host), port);
-	else
-          if (host[0] == 16)
-            snprintf(buf, 4096, "CONNECT [%s]:%d HTTP/1.0\r\nProxy-Authorization: Basic %s\r\n\r\n", hydra_address2string(host), port, proxy_authentication);
-          else
-            snprintf(buf, 4096, "CONNECT %s:%d HTTP/1.0\r\nProxy-Authorization: Basic %s\r\n\r\n", hydra_address2string(host), port, proxy_authentication);
+        else if (host[0] == 16)
+          snprintf(buf, 4096, "CONNECT [%s]:%d HTTP/1.0\r\nProxy-Authorization: Basic %s\r\n\r\n", hydra_address2string(host), port, proxy_authentication);
+        else
+          snprintf(buf, 4096, "CONNECT %s:%d HTTP/1.0\r\nProxy-Authorization: Basic %s\r\n\r\n", hydra_address2string(host), port, proxy_authentication);
 
-	send(s, buf, strlen(buf), 0);
-	recv(s, buf, 4096, 0);
-	if (strncmp("HTTP/", buf, 5) == 0 && (tmpptr = index(buf, ' ')) != NULL && *++tmpptr == '2') {
+        send(s, buf, strlen(buf), 0);
+        recv(s, buf, 4096, 0);
+        if (strncmp("HTTP/", buf, 5) == 0 && (tmpptr = index(buf, ' ')) != NULL && *++tmpptr == '2') {
           if (debug)
             printf("DEBUG_CONNECT_PROXY_OK\n");
-	} else {
+        } else {
           if (debug)
             printf("DEBUG_CONNECT_PROXY_FAILED (Code: %c%c%c)\n", *tmpptr, *(tmpptr + 1), *(tmpptr + 2));
           if (verbose)
             fprintf(stderr, "[ERROR] CONNECT call to proxy failed with code %c%c%c\n", *tmpptr, *(tmpptr + 1), *(tmpptr + 2));
           err = 1;
-	}
-	free(buf);
+        }
+        free(buf);
       } else {
         if (hydra_strcasestr(proxy_string_type, "socks5")) {
-	  char buf[1024];
-	  size_t cnt, wlen;
+          char buf[1024];
+          size_t cnt, wlen;
 
           /* socks v5 support */
-	  buf[0] = SOCKS_V5;
-	  buf[1] = 1;
-	  if (proxy_authentication == NULL)
-	    buf[2] = SOCKS_NOAUTH;
+          buf[0] = SOCKS_V5;
+          buf[1] = 1;
+          if (proxy_authentication == NULL)
+            buf[2] = SOCKS_NOAUTH;
           else
-	    buf[2] = SOCKS_PASSAUTH;
-	  cnt = hydra_send(s, buf, 3, 0);
-	  if (cnt != 3) {
-	    hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/3)\n", cnt);
+            buf[2] = SOCKS_PASSAUTH;
+          cnt = hydra_send(s, buf, 3, 0);
+          if (cnt != 3) {
+            hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/3)\n", cnt);
             err = 1;
           } else {
-	    cnt = hydra_recv(s, buf, 2);
-	    if (cnt != 2) {
-	      hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/2)\n", cnt);
+            cnt = hydra_recv(s, buf, 2);
+            if (cnt != 2) {
+              hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/2)\n", cnt);
               err = 1;
             }
-	    if ((unsigned int) buf[1] == SOCKS_NOMETHOD) {
-	      hydra_report(stderr, "[ERROR] SOCKS5 proxy authentication method negotiation failed\n");
+            if ((unsigned int) buf[1] == SOCKS_NOMETHOD) {
+              hydra_report(stderr, "[ERROR] SOCKS5 proxy authentication method negotiation failed\n");
               err = 1;
             }
             /* SOCKS_DOMAIN not supported here, do we need it ? */
@@ -299,114 +302,114 @@ int internal__hydra_connect(char *host, int port, int protocol, int type) {
               /* send user/pass */
               if (proxy_authentication != NULL) {
                 //format was checked previously
-                char *login=strtok(proxy_authentication, ":");
-                char *pass=strtok(NULL, ":");
+                char *login = strtok(proxy_authentication, ":");
+                char *pass = strtok(NULL, ":");
+
                 snprintf(buf, sizeof(buf), "\x01%c%s%c%s", (char) strlen(login), login, (char) strlen(pass), pass);
 
-		cnt = hydra_send(s, buf, strlen(buf), 0);
-		if (cnt != strlen(buf)) {
-		  hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/3)\n", cnt);
-        	  err = 1;
-        	} else {
-		  cnt = hydra_recv(s, buf, 2);
-		  if (cnt != 2) {
-		    hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/2)\n", cnt);
-        	    err = 1;
-        	  }
-        	  if (buf[1] != 0) {
-		    hydra_report(stderr, "[ERROR] SOCKS5 proxy authentication failure\n");
-        	    err = 1;
-        	  } else {
+                cnt = hydra_send(s, buf, strlen(buf), 0);
+                if (cnt != strlen(buf)) {
+                  hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/3)\n", cnt);
+                  err = 1;
+                } else {
+                  cnt = hydra_recv(s, buf, 2);
+                  if (cnt != 2) {
+                    hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/2)\n", cnt);
+                    err = 1;
+                  }
+                  if (buf[1] != 0) {
+                    hydra_report(stderr, "[ERROR] SOCKS5 proxy authentication failure\n");
+                    err = 1;
+                  } else {
                     if (debug)
-  		      hydra_report(stderr, "[DEBUG] SOCKS5 proxy authentication success\n");
-        	  }
-        	}
+                      hydra_report(stderr, "[DEBUG] SOCKS5 proxy authentication success\n");
+                  }
+                }
               }
-
 #ifdef AF_INET6
               if (ipv6) {
-		/* Version 5, connect: IPv6 address */
-		buf[0] = SOCKS_V5;
-		buf[1] = SOCKS_CONNECT;
-		buf[2] = 0;
-		buf[3] = SOCKS_IPV6;
-		memcpy(buf + 4, &target6.sin6_addr, sizeof target6.sin6_addr);
-		memcpy(buf + 20, &target6.sin6_port, sizeof target6.sin6_port);
-		wlen = 22;
+                /* Version 5, connect: IPv6 address */
+                buf[0] = SOCKS_V5;
+                buf[1] = SOCKS_CONNECT;
+                buf[2] = 0;
+                buf[3] = SOCKS_IPV6;
+                memcpy(buf + 4, &target6.sin6_addr, sizeof target6.sin6_addr);
+                memcpy(buf + 20, &target6.sin6_port, sizeof target6.sin6_port);
+                wlen = 22;
               } else {
 #endif
-		/* Version 5, connect: IPv4 address */
-		buf[0] = SOCKS_V5;
-		buf[1] = SOCKS_CONNECT;
-		buf[2] = 0;
-		buf[3] = SOCKS_IPV4;
-		memcpy(buf + 4, &target.sin_addr, sizeof target.sin_addr);
-		memcpy(buf + 8, &target.sin_port, sizeof target.sin_port);
-		wlen = 10;
+                /* Version 5, connect: IPv4 address */
+                buf[0] = SOCKS_V5;
+                buf[1] = SOCKS_CONNECT;
+                buf[2] = 0;
+                buf[3] = SOCKS_IPV4;
+                memcpy(buf + 4, &target.sin_addr, sizeof target.sin_addr);
+                memcpy(buf + 8, &target.sin_port, sizeof target.sin_port);
+                wlen = 10;
 #ifdef AF_INET6
               }
 #endif
-	      cnt = hydra_send(s, buf, wlen, 0);
-	      if (cnt != wlen) {
- 		hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/%zu)\n", cnt, wlen);
-        	err = 1;
+              cnt = hydra_send(s, buf, wlen, 0);
+              if (cnt != wlen) {
+                hydra_report(stderr, "[ERROR] SOCKS5 proxy write failed (%zu/%zu)\n", cnt, wlen);
+                err = 1;
               } else {
-		cnt=hydra_recv(s, buf, 10);
-		if (cnt != 10) {
-        	  hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/10)\n", cnt);
-        	  err = 1;
-        	}
-		if (buf[1] != 0) {
+                cnt = hydra_recv(s, buf, 10);
+                if (cnt != 10) {
+                  hydra_report(stderr, "[ERROR] SOCKS5 proxy read failed (%zu/10)\n", cnt);
+                  err = 1;
+                }
+                if (buf[1] != 0) {
                   /* 0x05 = connection refused by destination host */
                   if (buf[1] == 5)
-            	    hydra_report(stderr, "[ERROR] SOCKS proxy request failed\n");
+                    hydra_report(stderr, "[ERROR] SOCKS proxy request failed\n");
                   else
                     hydra_report(stderr, "[ERROR] SOCKS error %d\n", buf[1]);
-        	  err = 1;
-        	}
+                  err = 1;
+                }
               }
             }
           }
         } else {
           if (hydra_strcasestr(proxy_string_type, "socks4")) {
-	    if (ipv6) {
+            if (ipv6) {
               hydra_report(stderr, "[ERROR] SOCKS4 proxy does not support IPv6\n");
               err = 1;
-	    } else {
-	      char buf[1024];
-	      size_t cnt, wlen;
+            } else {
+              char buf[1024];
+              size_t cnt, wlen;
 
               /* socks v4 support */
-	      buf[0] = SOCKS_V4;
-	      buf[1] = SOCKS_CONNECT; /* connect */
-	      memcpy(buf + 2, &target.sin_port, sizeof target.sin_port);
-	      memcpy(buf + 4, &target.sin_addr, sizeof target.sin_addr);
-	      buf[8] = 0;     /* empty username */
-	      wlen = 9;
-	      cnt = hydra_send(s, buf, wlen, 0); 
-	      if (cnt != wlen) {
-		hydra_report(stderr, "[ERROR] SOCKS4 proxy write failed (%zu/%zu)\n", cnt, wlen);
-        	err = 1;
+              buf[0] = SOCKS_V4;
+              buf[1] = SOCKS_CONNECT;   /* connect */
+              memcpy(buf + 2, &target.sin_port, sizeof target.sin_port);
+              memcpy(buf + 4, &target.sin_addr, sizeof target.sin_addr);
+              buf[8] = 0;       /* empty username */
+              wlen = 9;
+              cnt = hydra_send(s, buf, wlen, 0);
+              if (cnt != wlen) {
+                hydra_report(stderr, "[ERROR] SOCKS4 proxy write failed (%zu/%zu)\n", cnt, wlen);
+                err = 1;
               } else {
-		cnt=hydra_recv(s, buf, 8);
-        	if (cnt != 8) {
-        	  hydra_report(stderr, "[ERROR] SOCKS4 proxy read failed (%zu/8)\n", cnt);
-        	  err = 1;
-        	}
-        	if (buf[1] != 90) {
+                cnt = hydra_recv(s, buf, 8);
+                if (cnt != 8) {
+                  hydra_report(stderr, "[ERROR] SOCKS4 proxy read failed (%zu/8)\n", cnt);
+                  err = 1;
+                }
+                if (buf[1] != 90) {
                   /* 91 = 0x5b = request rejected or failed */
                   if (buf[1] == 91)
-            	    hydra_report(stderr, "[ERROR] SOCKS proxy request failed\n");
+                    hydra_report(stderr, "[ERROR] SOCKS proxy request failed\n");
                   else
-        	    hydra_report(stderr, "[ERROR] SOCKS error %d\n", buf[1]);
-        	  err = 1;
-        	}
-	      }
+                    hydra_report(stderr, "[ERROR] SOCKS error %d\n", buf[1]);
+                  err = 1;
+                }
+              }
             }
-	  } else {
-              hydra_report(stderr, "[ERROR] Unknown proxy type: %s, valid type are \"connect\", \"socks4\" or \"socks5\"\n", proxy_string_type);
-              err = 1;
-	  }
+          } else {
+            hydra_report(stderr, "[ERROR] Unknown proxy type: %s, valid type are \"connect\", \"socks4\" or \"socks5\"\n", proxy_string_type);
+            err = 1;
+          }
         }
       }
     }
@@ -429,8 +432,9 @@ RSA *ssl_temp_rsa_cb(SSL * ssl, int export, int keylength) {
 #ifdef NO_RSA_LEGACY
     RSA *private = RSA_new();
     BIGNUM *f4 = BN_new();
+
     BN_set_word(f4, RSA_F4);
-    RSA_generate_key_ex(rsa,1024, f4, NULL);
+    RSA_generate_key_ex(rsa, 1024, f4, NULL);
 #else
     rsa = RSA_generate_key(1024, RSA_F4, NULL, NULL);
 #endif
@@ -445,7 +449,7 @@ int internal__hydra_connect_to_ssl(int socket) {
   if (ssl_first) {
     SSL_load_error_strings();
 //    SSL_add_ssl_algoritms();
-    SSL_library_init();		// ?
+    SSL_library_init();         // ?
     ssl_first = 0;
   }
 
@@ -652,11 +656,10 @@ void hydra_report_found(int port, char *svc, FILE * fp) {
       fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] login: \e[32m%s\e[0m\n", port, svc, hydra_get_next_login());
     else
       fprintf(fp, "[%d][%s] login: %s\n", port, svc, hydra_get_next_login());
+  else if (colored_output)
+    fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] login: \e[32m%s\e[0m   password: \e[32m%s\e[0m\n", port, svc, hydra_get_next_login(), hydra_get_next_password());
   else
-    if (colored_output)
-      fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] login: \e[32m%s\e[0m   password: \e[32m%s\e[0m\n", port, svc, hydra_get_next_login(), hydra_get_next_password());
-    else
-      fprintf(fp, "[%d][%s] login: %s   password: %s\n", port, svc, hydra_get_next_login(), hydra_get_next_password());
+    fprintf(fp, "[%d][%s] login: %s   password: %s\n", port, svc, hydra_get_next_login(), hydra_get_next_password());
 
   if (stdout != fp) {
     if (!strcmp(svc, "rsh"))
@@ -672,9 +675,9 @@ void hydra_report_found(int port, char *svc, FILE * fp) {
 void hydra_report_pass_found(int port, char *ip, char *svc, FILE * fp) {
   strcpy(ipaddr_str, hydra_address2string(ip));
   if (colored_output)
-   fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   password: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_password());
+    fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   password: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_password());
   else
-   fprintf(fp, "[%d][%s] host: %s   password: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
+    fprintf(fp, "[%d][%s] host: %s   password: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
   if (stdout != fp)
     printf("[%d][%s] host: %s   password: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
   fflush(fp);
@@ -694,18 +697,18 @@ void hydra_report_found_host(int port, char *ip, char *svc, FILE * fp) {
   else if (!strcmp(svc, "snmp3"))
     if (colored_output)
       fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   login: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_password());
-    else    
+    else
       fprintf(fp, "[%d][%s] host: %s   login: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
   else if (!strcmp(svc, "cisco-enable") || !strcmp(svc, "cisco"))
     if (colored_output)
       fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   password: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_password());
-     else
-      fprintf(fp, "[%d][%s] host: %s   password: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
-  else
-    if (colored_output)
-      fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   login: \e[32m%s\e[0m   %s: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_login(), keyw, hydra_get_next_password());
     else
-      fprintf(fp, "[%d][%s] host: %s   login: %s   %s: %s\n", port, svc, ipaddr_str, hydra_get_next_login(), keyw, hydra_get_next_password());
+      fprintf(fp, "[%d][%s] host: %s   password: %s\n", port, svc, ipaddr_str, hydra_get_next_password());
+  else if (colored_output)
+    fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   login: \e[32m%s\e[0m   %s: \e[32m%s\e[0m\n", port, svc, ipaddr_str, hydra_get_next_login(), keyw,
+            hydra_get_next_password());
+  else
+    fprintf(fp, "[%d][%s] host: %s   login: %s   %s: %s\n", port, svc, ipaddr_str, hydra_get_next_login(), keyw, hydra_get_next_password());
   if (stdout != fp) {
     if (!strcmp(svc, "rsh") || !strcmp(svc, "oracle-sid"))
       printf("[%d][%s] host: %s   login: %s\n", port, svc, ipaddr_str, hydra_get_next_login());
@@ -723,7 +726,8 @@ void hydra_report_found_host(int port, char *ip, char *svc, FILE * fp) {
 void hydra_report_found_host_msg(int port, char *ip, char *svc, FILE * fp, char *msg) {
   strcpy(ipaddr_str, hydra_address2string(ip));
   if (colored_output)
-    fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   login: \e[32m%s\e[0m   password: \e[32m%s\e[0m  [%s]\n", port, svc, ipaddr_str, hydra_get_next_login(), hydra_get_next_password(), msg);
+    fprintf(fp, "[\e[31m%d\e[0m][\e[31m%s\e[0m] host: \e[32m%s\e[0m   login: \e[32m%s\e[0m   password: \e[32m%s\e[0m  [%s]\n", port, svc, ipaddr_str, hydra_get_next_login(),
+            hydra_get_next_password(), msg);
   else
     fprintf(fp, "[%d][%s] host: %s   login: %s   password: %s  [%s]\n", port, svc, ipaddr_str, hydra_get_next_login(), hydra_get_next_password(), msg);
   if (stdout != fp)
@@ -822,12 +826,14 @@ int hydra_recv(int socket, char *buf, int length) {
 int hydra_recv_nb(int socket, char *buf, int length) {
   int ret = -1;
   char text[64];
-  
+
   if (hydra_data_ready_timed(socket, (long) waittime, 0) > 0) {
     if ((ret = internal__hydra_recv(socket, buf, length)) <= 0) {
       buf[0] = 0;
-      sprintf(text, "[DEBUG] RECV [pid:%d]", getpid());
-      hydra_dump_data(buf, ret, text);
+      if (debug) {
+        sprintf(text, "[DEBUG] RECV [pid:%d]", getpid());
+        hydra_dump_data(buf, ret, text);
+      }
       return ret;
     }
     if (debug) {
@@ -872,13 +878,13 @@ char *hydra_receive_line(int socket) {
     free(buff);
     return NULL;
   } else {
-      if (got > 0) {
-        for (k = 0; k < got; k++)
-          if (buff[k] == 0)
-            buff[k] = 32;
-        buff[got] = 0;
-        usleep(100);
-      }
+    if (got > 0) {
+      for (k = 0; k < got; k++)
+        if (buff[k] == 0)
+          buff[k] = 32;
+      buff[got] = 0;
+      usleep(100);
+    }
   }
 
   while (hydra_data_ready(socket) > 0 && j > 0) {
@@ -910,10 +916,11 @@ char *hydra_receive_line(int socket) {
 
 int hydra_send(int socket, char *buf, int size, int options) {
   char text[64];
-  
+
   if (debug) {
     sprintf(text, "[DEBUG] SEND [pid:%d]", getpid());
     hydra_dump_data(buf, size, text);
+
 /*    int k;
     char *debugbuf = malloc(size + 1);
 
@@ -928,6 +935,7 @@ int hydra_send(int socket, char *buf, int size, int options) {
       free(debugbuf);
     }*/
   }
+
 /*    if (hydra_data_ready_writing(socket)) < 1) return -1; XXX maybe needed in the future */
   return (internal__hydra_send(socket, buf, size, options));
 }
@@ -947,38 +955,39 @@ char *hydra_strrep(char *string, char *oldpiece, char *newpiece) {
   char *c, oldstring[1024];
   static char newstring[1024];
 
-  if (string == NULL || oldpiece == NULL || newpiece == NULL || strlen(string) >= sizeof(oldstring) - 1 || (strlen(string) + strlen(newpiece) - strlen(oldpiece) >= sizeof(newstring) - 1 && strlen(string) > strlen(oldpiece) ))
+  if (string == NULL || oldpiece == NULL || newpiece == NULL || strlen(string) >= sizeof(oldstring) - 1
+      || (strlen(string) + strlen(newpiece) - strlen(oldpiece) >= sizeof(newstring) - 1 && strlen(string) > strlen(oldpiece)))
     return NULL;
 
   strcpy(newstring, string);
   strcpy(oldstring, string);
 
- // while ((c = (char *) strstr(oldstring, oldpiece)) != NULL) {
-    c = (char *) strstr(oldstring, oldpiece);
-    new_len = strlen(newpiece);
-    old_len = strlen(oldpiece);
-    end = strlen(oldstring) - old_len;
-    oldpiece_index = c - oldstring;
-    newstr_index = 0;
-    str_index = 0;
-    while (c != NULL && str_index <= end) {
-      /* Copy characters from the left of matched pattern occurence */
-      cpy_len = oldpiece_index - str_index;
-      strncpy(newstring + newstr_index, oldstring + str_index, cpy_len);
-      newstr_index += cpy_len;
-      str_index += cpy_len;
+  // while ((c = (char *) strstr(oldstring, oldpiece)) != NULL) {
+  c = (char *) strstr(oldstring, oldpiece);
+  new_len = strlen(newpiece);
+  old_len = strlen(oldpiece);
+  end = strlen(oldstring) - old_len;
+  oldpiece_index = c - oldstring;
+  newstr_index = 0;
+  str_index = 0;
+  while (c != NULL && str_index <= end) {
+    /* Copy characters from the left of matched pattern occurence */
+    cpy_len = oldpiece_index - str_index;
+    strncpy(newstring + newstr_index, oldstring + str_index, cpy_len);
+    newstr_index += cpy_len;
+    str_index += cpy_len;
 
-      /* Copy replacement characters instead of matched pattern */
-      strcpy(newstring + newstr_index, newpiece);
-      newstr_index += new_len;
-      str_index += old_len;
-      /* Check for another pattern match */
-      if ((c = (char *) strstr(oldstring + str_index, oldpiece)) != NULL)
-        oldpiece_index = c - oldstring;
-    }
-    /* Copy remaining characters from the right of last matched pattern */
-    strcpy(newstring + newstr_index, oldstring + str_index);
-    strcpy(oldstring, newstring);
+    /* Copy replacement characters instead of matched pattern */
+    strcpy(newstring + newstr_index, newpiece);
+    newstr_index += new_len;
+    str_index += old_len;
+    /* Check for another pattern match */
+    if ((c = (char *) strstr(oldstring + str_index, oldpiece)) != NULL)
+      oldpiece_index = c - oldstring;
+  }
+  /* Copy remaining characters from the right of last matched pattern */
+  strcpy(newstring + newstr_index, oldstring + str_index);
+  strcpy(oldstring, newstring);
 //  }
   return newstring;
 }
@@ -1180,11 +1189,11 @@ char *hydra_strcasestr(const char *haystack, const char *needle) {
     return NULL;
 
   for (; *haystack; ++haystack) {
-    if (toupper((int)*haystack) == toupper((int)*needle)) {
+    if (toupper((int) *haystack) == toupper((int) *needle)) {
       const char *h, *n;
 
       for (h = haystack, n = needle; *h && *n; ++h, ++n) {
-        if (toupper((int)*h) != toupper((int)*n)) {
+        if (toupper((int) *h) != toupper((int) *n)) {
           break;
         }
       }
@@ -1257,7 +1266,7 @@ void hydra_dump_data(unsigned char *buf, int len, char *text) {
 
 int hydra_memsearch(char *haystack, int hlen, char *needle, int nlen) {
   int i;
-  
+
   for (i = 0; i <= hlen - nlen; i++)
     if (memcmp(haystack + i, needle, nlen) == 0)
       return i;

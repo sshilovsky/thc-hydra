@@ -27,7 +27,7 @@ extern char *HYDRA_EXIT;
 
 #define DEFAULT_BRANCH "trunk"
 
-static svn_error_t * print_dirdummy(void *baton, const char *path, const svn_dirent_t *dirent, const svn_lock_t *lock, const char *abs_path, apr_pool_t *pool) {
+static svn_error_t *print_dirdummy(void *baton, const char *path, const svn_dirent_t * dirent, const svn_lock_t * lock, const char *abs_path, apr_pool_t * pool) {
   return SVN_NO_ERROR;
 }
 
@@ -91,8 +91,8 @@ int start_svn(int s, char *ip, int port, unsigned char options, char *miscptr, F
 
   providers = apr_array_make(pool, 1, sizeof(svn_auth_provider_object_t *));
 
-  svn_auth_get_simple_prompt_provider(&provider, my_simple_prompt_callback, NULL,     /* baton */
-                                        0, pool);
+  svn_auth_get_simple_prompt_provider(&provider, my_simple_prompt_callback, NULL,       /* baton */
+                                      0, pool);
   APR_ARRAY_PUSH(providers, svn_auth_provider_object_t *) = provider;
 
   /* Register the auth-providers into the context's auth_baton. */
@@ -104,7 +104,7 @@ int start_svn(int s, char *ip, int port, unsigned char options, char *miscptr, F
   else
     snprintf(URL, sizeof(URL), "svn://%s:%d/%s", hydra_address2string(ip), port, URLBRANCH);
   dirents = SVN_DIRENT_KIND;
-  err = svn_client_list2 (URL, &revision, &revision, svn_depth_unknown, dirents, FALSE, print_dirdummy, NULL, ctx, pool);
+  err = svn_client_list2(URL, &revision, &revision, svn_depth_unknown, dirents, FALSE, print_dirdummy, NULL, ctx, pool);
 
   svn_pool_clear(pool);
   svn_pool_destroy(pool);
@@ -191,7 +191,7 @@ void service_svn(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
 
 #endif
 
-int service_svn_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_svn_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

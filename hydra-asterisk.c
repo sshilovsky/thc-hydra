@@ -99,7 +99,8 @@ void service_asterisk(char *ip, int sp, unsigned char options, char *miscptr, FI
 
       if (buf == NULL || strstr(buf, "Asterisk Call Manager/") == NULL) {
         /* check the first line */
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an Asterisk Call Manager protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an Asterisk Call Manager protocol or service shutdown: %s\n", buf);
         hydra_child_exit(2);
       }
       free(buf);
@@ -121,7 +122,7 @@ void service_asterisk(char *ip, int sp, unsigned char options, char *miscptr, FI
   }
 }
 
-int service_asterisk_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_asterisk_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

@@ -1,10 +1,10 @@
 #include "hydra-mod.h"
 #ifdef LIBOPENSSL
-  #include <openssl/hmac.h>
-  #include <openssl/md5.h>
-  #include <openssl/sha.h>
-  #include <openssl/des.h>
-  #include <openssl/aes.h>
+#include <openssl/hmac.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/des.h>
+#include <openssl/aes.h>
 #endif
 
 extern int hydra_data_ready_timed(int socket, long sec, long usec);
@@ -16,25 +16,28 @@ char snmpv3buf[1024], *snmpv3info = NULL;
 int snmpv3infolen = 0, snmpversion = 1, snmpread = 1, hashtype = 1, enctype = 0;
 
 char snmpv3_init[] = { 0x30, 0x3e, 0x02, 0x01, 0x03, 0x30, 0x11, 0x02,
-                       0x04, 0x08, 0x86, 0xdd, 0xf0, 0x02, 0x03, 0x00,
-                       0xff, 0xe3, 0x04, 0x01, 0x04, 0x02, 0x01, 0x03, 
-                       0x04, 0x10, 0x30, 0x0e, 0x04, 0x00, 0x02, 0x01, 
-                       0x00, 0x02, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00, 
-                       0x04, 0x00, 0x30, 0x14, 0x04, 0x00, 0x04, 0x00, 
-                       0xa0, 0x0e, 0x02, 0x04, 0x3f, 0x44, 0x5c, 0xbc, 
-                       0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x00 };
+  0x04, 0x08, 0x86, 0xdd, 0xf0, 0x02, 0x03, 0x00,
+  0xff, 0xe3, 0x04, 0x01, 0x04, 0x02, 0x01, 0x03,
+  0x04, 0x10, 0x30, 0x0e, 0x04, 0x00, 0x02, 0x01,
+  0x00, 0x02, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00,
+  0x04, 0x00, 0x30, 0x14, 0x04, 0x00, 0x04, 0x00,
+  0xa0, 0x0e, 0x02, 0x04, 0x3f, 0x44, 0x5c, 0xbc,
+  0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x00
+};
 
 char snmpv3_get1[] = { 0x30, 0x77, 0x02, 0x01, 0x03, 0x30, 0x11, 0x02,
-                       0x04, 0x08, 0x86, 0xdd, 0xef, 0x02, 0x03, 0x00,
-                       0xff, 0xe3, 0x04, 0x01, 0x05, 0x02, 0x01, 0x03 };
+  0x04, 0x08, 0x86, 0xdd, 0xef, 0x02, 0x03, 0x00,
+  0xff, 0xe3, 0x04, 0x01, 0x05, 0x02, 0x01, 0x03
+};
 
 char snmpv3_get2[] = { 0x30, 0x2e, 0x04, 0x0c, 0x80, 0x00, 0x00,
-                       0x09, 0x03, 0x00, 0x00, 0x1f, 0xca, 0x8d, 0x82,
-                       0x1b, 0x04, 0x00, 0xa0, 0x1c, 0x02, 0x04, 0x3f,
-                       0x44, 0x5c, 0xbb, 0x02, 0x01, 0x00, 0x02, 0x01,
-                       0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b,
-                       0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00, 0x05,
-                       0x00 };
+  0x09, 0x03, 0x00, 0x00, 0x1f, 0xca, 0x8d, 0x82,
+  0x1b, 0x04, 0x00, 0xa0, 0x1c, 0x02, 0x04, 0x3f,
+  0x44, 0x5c, 0xbb, 0x02, 0x01, 0x00, 0x02, 0x01,
+  0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b,
+  0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00, 0x05,
+  0x00
+};
 
 char snmpv3_nouser[] = { 0x04, 0x00, 0x04, 0x00, 0x04, 0x00 };
 
@@ -49,7 +52,7 @@ struct SNMPV1_A {
 struct SNMPV1_A snmpv1_a = {
   .ID = '\x30',
   .len = '\x00',
-  .ver = "\x02\x01\x00", /* \x02\x01\x01 for snmpv2c, \x02\x01\x03 for snmpv3 */
+  .ver = "\x02\x01\x00",        /* \x02\x01\x01 for snmpv2c, \x02\x01\x03 for snmpv3 */
   .comid = '\x04',
   .comlen = '\x00'
 };
@@ -63,16 +66,13 @@ struct SNMPV1_R {
   char objectid[2];
   char object[11];
   char value[3];
-}
-snmpv1_r = {
-  .type = "\xa0\x1b",         /* GET */
-  .identid = "\x02\x04",
-  .ident = "\x1a\x5e\x97\x00",        /* random crap :) */
-  .errstat = "\x02\x01\x00",        /* no error */
-  .errind = "\x02\x01\x00", /* error index 0 */
-  .objectid = "\x30\x0d",
-  .object = "\x30\x0b\x06\x07\x2b\x06\x01\x02\x01\x01\x01",  /* sysDescr */
-  .value = "\x05\x00"       /* we just read, so value = 0 */
+} snmpv1_r = {
+  .type = "\xa0\x1b",           /* GET */
+    .identid = "\x02\x04",.ident = "\x1a\x5e\x97\x00",  /* random crap :) */
+    .errstat = "\x02\x01\x00",  /* no error */
+    .errind = "\x02\x01\x00",   /* error index 0 */
+    .objectid = "\x30\x0d",.object = "\x30\x0b\x06\x07\x2b\x06\x01\x02\x01\x01\x01",    /* sysDescr */
+    .value = "\x05\x00"         /* we just read, so value = 0 */
 };
 
 struct SNMPV1_W {
@@ -84,116 +84,109 @@ struct SNMPV1_W {
   char objectid[2];
   char object[12];
   char value[8];
-}
-snmpv1_w = {
-  .type = "\xa3\x21",         /* SET */
-    .identid = "\x02\x04",
-    .ident = "\x1a\x5e\x97\x22",        /* random crap :) */
-    .errstat = "\x02\x01\x00",        /* no error */
-    .errind = "\x02\x01\x00", /* error index 0 */
-    .objectid = "\x30\x13",   /* string */
-    .object = "\x30\x11\x06\x08\x2b\x06\x01\x02\x01\x01\x05\x00",
-    .value = "\x04\x05Hydra"     /* writing hydra :-) */
+} snmpv1_w = {
+  .type = "\xa3\x21",           /* SET */
+    .identid = "\x02\x04",.ident = "\x1a\x5e\x97\x22",  /* random crap :) */
+    .errstat = "\x02\x01\x00",  /* no error */
+    .errind = "\x02\x01\x00",   /* error index 0 */
+    .objectid = "\x30\x13",     /* string */
+    .object = "\x30\x11\x06\x08\x2b\x06\x01\x02\x01\x01\x05\x00",.value = "\x04\x05Hydra"       /* writing hydra :-) */
 };
 
 #ifdef LIBOPENSSL
-void password_to_key_md5(
-   u_char *password,    /* IN */
-   u_int   passwordlen, /* IN */
-   u_char *engineID,    /* IN  - pointer to snmpEngineID  */
-   u_int   engineLength,/* IN  - length of snmpEngineID */
-   u_char *key)         /* OUT - pointer to caller 16-octet buffer */
-{
-   MD5_CTX     MD;
-   u_char     *cp, password_buf[80], *mypass = password, bpass[17];
-   u_long      password_index = 0, count = 0, i, mylen = passwordlen, myelen = engineLength;
+void password_to_key_md5(u_char * password,     /* IN */
+                         u_int passwordlen,     /* IN */
+                         u_char * engineID,     /* IN  - pointer to snmpEngineID  */
+                         u_int engineLength,    /* IN  - length of snmpEngineID */
+                         u_char * key) {        /* OUT - pointer to caller 16-octet buffer */
+  MD5_CTX MD;
+  u_char *cp, password_buf[80], *mypass = password, bpass[17];
+  u_long password_index = 0, count = 0, i, mylen = passwordlen, myelen = engineLength;
 
-   if (mylen < 8) {
-     memset(bpass, 0, sizeof(bpass));
-     strcpy(bpass, password);
-     while (mylen < 8) {
-       strcat(bpass, password);
-       mylen += passwordlen; 
-     }
-     mypass = bpass;
-   }
-   if (myelen > 32)
-     myelen = 32;
+  if (mylen < 8) {
+    memset(bpass, 0, sizeof(bpass));
+    strcpy(bpass, password);
+    while (mylen < 8) {
+      strcat(bpass, password);
+      mylen += passwordlen;
+    }
+    mypass = bpass;
+  }
+  if (myelen > 32)
+    myelen = 32;
 
-   MD5_Init(&MD);   /* initialize MD5 */
-   /* Use while loop until we've done 1 Megabyte */
-   while (count < 1048576) {
-      cp = password_buf;
-      for (i = 0; i < 64; i++) {
-          /* Take the next octet of the password, wrapping */
-          /* to the beginning of the password as necessary.*/
-          *cp++ = mypass[password_index++ % mylen];
-      }
-      MD5_Update(&MD, password_buf, 64);
-      count += 64;
-   }
-   MD5_Final(key, &MD);          /* tell MD5 we're done */
-   /* Now localize the key with the engineID and pass   */
-   /* through MD5 to produce final key                  */
-   /* May want to ensure that engineLength <= 32,       */
-   /* otherwise need to use a buffer larger than 64     */
-   memcpy(password_buf, key, 16);
-   memcpy(password_buf + 16, engineID, myelen);
-   memcpy(password_buf + 16 + myelen, key, 16);
-   MD5_Init(&MD);
-   MD5_Update(&MD, password_buf, 32 + myelen);
-   MD5_Final(key, &MD);
-   return;
+  MD5_Init(&MD);                /* initialize MD5 */
+  /* Use while loop until we've done 1 Megabyte */
+  while (count < 1048576) {
+    cp = password_buf;
+    for (i = 0; i < 64; i++) {
+      /* Take the next octet of the password, wrapping */
+      /* to the beginning of the password as necessary. */
+      *cp++ = mypass[password_index++ % mylen];
+    }
+    MD5_Update(&MD, password_buf, 64);
+    count += 64;
+  }
+  MD5_Final(key, &MD);          /* tell MD5 we're done */
+  /* Now localize the key with the engineID and pass   */
+  /* through MD5 to produce final key                  */
+  /* May want to ensure that engineLength <= 32,       */
+  /* otherwise need to use a buffer larger than 64     */
+  memcpy(password_buf, key, 16);
+  memcpy(password_buf + 16, engineID, myelen);
+  memcpy(password_buf + 16 + myelen, key, 16);
+  MD5_Init(&MD);
+  MD5_Update(&MD, password_buf, 32 + myelen);
+  MD5_Final(key, &MD);
+  return;
 }
 
-void password_to_key_sha(
-   u_char *password,    /* IN */
-   u_int   passwordlen, /* IN */
-   u_char *engineID,    /* IN  - pointer to snmpEngineID  */
-   u_int   engineLength,/* IN  - length of snmpEngineID */
-   u_char *key)         /* OUT - pointer to caller 20-octet buffer */
-{
-   SHA_CTX     SH;
-   u_char     *cp, password_buf[80], *mypass = password, bpass[17];
-   u_long      password_index = 0, count = 0, i, mylen = passwordlen, myelen = engineLength;
+void password_to_key_sha(u_char * password,     /* IN */
+                         u_int passwordlen,     /* IN */
+                         u_char * engineID,     /* IN  - pointer to snmpEngineID  */
+                         u_int engineLength,    /* IN  - length of snmpEngineID */
+                         u_char * key) {        /* OUT - pointer to caller 20-octet buffer */
+  SHA_CTX SH;
+  u_char *cp, password_buf[80], *mypass = password, bpass[17];
+  u_long password_index = 0, count = 0, i, mylen = passwordlen, myelen = engineLength;
 
-   if (mylen < 8) {
-     memset(bpass, 0, sizeof(bpass));
-     strcpy(bpass, password);
-     while (mylen < 8) {
-       strcat(bpass, password);
-       mylen += passwordlen; 
-     }
-     mypass = bpass;
-   }
+  if (mylen < 8) {
+    memset(bpass, 0, sizeof(bpass));
+    strcpy(bpass, password);
+    while (mylen < 8) {
+      strcat(bpass, password);
+      mylen += passwordlen;
+    }
+    mypass = bpass;
+  }
 
-   if (myelen > 32)
-     myelen = 32;
+  if (myelen > 32)
+    myelen = 32;
 
-   SHA1_Init(&SH);   /* initialize SHA */
-   /* Use while loop until we've done 1 Megabyte */
-   while (count < 1048576) {
-      cp = password_buf;
-      for (i = 0; i < 64; i++) {
-          /* Take the next octet of the password, wrapping */
-          /* to the beginning of the password as necessary.*/
-          *cp++ = mypass[password_index++ % mylen];
-      }
-      SHA1_Update(&SH, password_buf, 64);
-      count += 64;
-   }
-   SHA1_Final(key, &SH);          /* tell SHA we're done */
-   /* Now localize the key with the engineID and pass   */
-   /* through SHA to produce final key                  */
-   /* May want to ensure that engineLength <= 32,       */
-   /* otherwise need to use a buffer larger than 72     */
-   memcpy(password_buf, key, 20);
-   memcpy(password_buf + 20, engineID, myelen);
-   memcpy(password_buf + 20 + myelen, key, 20);
-   SHA1_Init(&SH);
-   SHA1_Update(&SH, password_buf, 40 + myelen);
-   SHA1_Final(key, &SH);
-   return;
+  SHA1_Init(&SH);               /* initialize SHA */
+  /* Use while loop until we've done 1 Megabyte */
+  while (count < 1048576) {
+    cp = password_buf;
+    for (i = 0; i < 64; i++) {
+      /* Take the next octet of the password, wrapping */
+      /* to the beginning of the password as necessary. */
+      *cp++ = mypass[password_index++ % mylen];
+    }
+    SHA1_Update(&SH, password_buf, 64);
+    count += 64;
+  }
+  SHA1_Final(key, &SH);         /* tell SHA we're done */
+  /* Now localize the key with the engineID and pass   */
+  /* through SHA to produce final key                  */
+  /* May want to ensure that engineLength <= 32,       */
+  /* otherwise need to use a buffer larger than 72     */
+  memcpy(password_buf, key, 20);
+  memcpy(password_buf + 20, engineID, myelen);
+  memcpy(password_buf + 20 + myelen, key, 20);
+  SHA1_Init(&SH);
+  SHA1_Update(&SH, password_buf, 40 + myelen);
+  SHA1_Final(key, &SH);
+  return;
 }
 #endif
 
@@ -202,8 +195,9 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   int i, j, k, size, off = 0, off2 = 0, done = 0;
   unsigned char initVect[8], privacy_params[8];
   int engine_boots = 0;
+
 #ifdef LIBOPENSSL
-  DES_key_schedule symcbc;  
+  DES_key_schedule symcbc;
 #endif
 
   if (strlen(login = hydra_get_next_login()) == 0)
@@ -238,7 +232,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       memcpy(buffer + i, &snmpv1_w, size);
       i += sizeof(snmpv1_w);
     }
-  } else { // snmpv3
+  } else {                      // snmpv3
     if (enctype == 0) {
       memcpy(buffer, snmpv3_get1, sizeof(snmpv3_get1));
       i = sizeof(snmpv3_get1);
@@ -282,7 +276,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
     buffer[i] = 0x04;
     buffer[i + 1] = strlen(login);
     memcpy(buffer + i + 2, login, strlen(login));
-     i += 2 + strlen(login);
+    i += 2 + strlen(login);
 
     buffer[i] = 0x04;
     if (hashtype > 0) {
@@ -301,7 +295,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       i += 2;
     } else {
       buffer[i + 1] = 8;
-      memcpy(buffer + i + 2, salt, 8); // uninitialized and we dont care
+      memcpy(buffer + i + 2, salt, 8);  // uninitialized and we dont care
       i += 10;
     }
 
@@ -316,7 +310,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
 /*
 //PrivDES::encrypt(const unsigned char *key,  
-//                 const unsigned int   /*key_len*///,  
+      //                 const unsigned int   /*key_len*///,  
 //                 const unsigned char *buffer,  
 //                 const unsigned int   buffer_len,  
 //                 unsigned char       *out_buffer,  
@@ -326,17 +320,17 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 //                 const unsigned long  engine_boots,  
 //                 const unsigned long  /*engine_time*/) 
 // last 8 bytes of key are used as base for initialization vector   */
-    k = 0;
-    memcpy((char*)initVect, key + 8, 8);  
-    // put salt in privacy_params
-    j = htonl(engine_boots);
-    memcpy(privacy_params, (char*) &j, 4);
-    memcpy(privacy_params + 4, salt, 4); // ??? correct?
-  // xor initVect with salt  
-    for (i = 0; i < 8; i++)  
-      initVect[i] ^= privacy_params[i];  
-    des_key_sched((C_Block*)key, symcbc);
-    des_ncbc_encrypt(snmpv3_get2 + 2, buf, sizeof(snmpv3_get2) - 2, symcbc, (C_Block*)(initVect), DES_ENCRYPT);
+      k = 0;
+      memcpy((char *) initVect, key + 8, 8);
+      // put salt in privacy_params
+      j = htonl(engine_boots);
+      memcpy(privacy_params, (char *) &j, 4);
+      memcpy(privacy_params + 4, salt, 4);      // ??? correct?
+      // xor initVect with salt  
+      for (i = 0; i < 8; i++)
+        initVect[i] ^= privacy_params[i];
+      des_key_sched((C_Block *) key, symcbc);
+      des_ncbc_encrypt(snmpv3_get2 + 2, buf, sizeof(snmpv3_get2) - 2, symcbc, (C_Block *) (initVect), DES_ENCRYPT);
 
 #endif
 
@@ -360,17 +354,17 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       k = ((sizeof(snmpv3_get2) - 2) / 8);
       if ((sizeof(snmpv3_get2) - 2) % 8 != 0)
         k++;
-      memcpy(buffer + i + 2, buf, k*8);
+      memcpy(buffer + i + 2, buf, k * 8);
       i += k * 8 + 2;
     }
 
-    i++; // just to conform with the snmpv1/2 code
+    i++;                        // just to conform with the snmpv1/2 code
 #ifdef LIBOPENSSL
     if (hashtype == 1) {
-      HMAC((EVP_MD *)EVP_md5(), key, 16, buffer, i - 1, hash, NULL);
+      HMAC((EVP_MD *) EVP_md5(), key, 16, buffer, i - 1, hash, NULL);
       memcpy(buffer + off, hash, 12);
     } else if (hashtype == 2) {
-      HMAC((EVP_MD *)EVP_sha1(), key, 20, buffer, i - 1, hash, NULL);
+      HMAC((EVP_MD *) EVP_sha1(), key, 20, buffer, i - 1, hash, NULL);
       memcpy(buffer + off, hash, 12);
     }
 #endif
@@ -389,14 +383,14 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
     if (snmpversion < 3) {
       /* stolen from ADMsnmp... :P */
       for (j = 0; j < i; j++) {
-        if (buf[j] == '\x04') {   /* community name */
+        if (buf[j] == '\x04') { /* community name */
           for (j = j + buf[j + 1]; j + 2 < i; j++) {
-            if (buf[j] == '\xa2') {       /* PDU Response */
+            if (buf[j] == '\xa2') {     /* PDU Response */
               for (; j + 2 < i; j++) {
-                if (buf[j] == '\x02') {   /* ID */
+                if (buf[j] == '\x02') { /* ID */
                   for (j = j + (buf[j + 1]); j + 2 < i; j++) {
                     if (buf[j] == '\x02') {
-                      if (buf[j + 1] == '\x01') { /* good ! */
+                      if (buf[j + 1] == '\x01') {       /* good ! */
                         hydra_report_found_host(port, ip, "snmp", fp);
                         hydra_completed_pair_found();
                         if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
@@ -411,7 +405,7 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           }
         }
       }
-    } else { // snmpv3 reply
+    } else {                    // snmpv3 reply
       off = 0;
       if (buf[0] == 0x30) {
         if (buf[4] == 0x03 && buf[5] == 0x30)
@@ -424,7 +418,8 @@ int start_snmp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       if (off == 0)
         return 3;
 
-if (debug) printf("[DEBUG] buf[%d + 15] %d\n", off, buf[off + 15]);
+      if (debug)
+        printf("[DEBUG] buf[%d + 15] %d\n", off, buf[off + 15]);
       k = 3 + off + buf[2 + off];
       if ((j = hydra_memsearch(buf + k, buf[k + 3], snmpv3_nouser, sizeof(snmpv3_nouser))) < 0)
         if ((j = hydra_memsearch(buf + k, buf[k + 3], login, strlen(login))) >= 0) {
@@ -439,8 +434,9 @@ if (debug) printf("[DEBUG] buf[%d + 15] %d\n", off, buf[off + 15]);
           i = sizeof(snmpv3info);
         memcpy(snmpv3info, buf + k, i);
         snmpv3infolen = j;
-        if (debug) hydra_dump_asciihex(snmpv3info, snmpv3infolen);
-      }  
+        if (debug)
+          hydra_dump_asciihex(snmpv3info, snmpv3infolen);
+      }
 
       if ((buf[off + 15] & 1) == 1) {
         if (hashtype == 0)
@@ -451,14 +447,14 @@ if (debug) printf("[DEBUG] buf[%d + 15] %d\n", off, buf[off + 15]);
         if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
           return 3;
         return 1;
-      } else
-        if ((buf[off + 15] & 5) == 4 && hydra_memsearch(buf, i, snmpv3_nouser, sizeof(snmpv3_nouser)) >= 0) { // user does not exist
-          if (debug) printf("[DEBUG] server reply indicates login %s does not\n", login);
-          hydra_completed_pair_skip();
-          if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
-            return 3;
-          return 1;
-        }
+      } else if ((buf[off + 15] & 5) == 4 && hydra_memsearch(buf, i, snmpv3_nouser, sizeof(snmpv3_nouser)) >= 0) {      // user does not exist
+        if (debug)
+          printf("[DEBUG] server reply indicates login %s does not\n", login);
+        hydra_completed_pair_skip();
+        if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
+          return 3;
+        return 1;
+      }
     }
   }
 
@@ -511,7 +507,8 @@ void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
   sock = hydra_connect_udp(ip, myport);
   port = myport;
 
-  if (debug) printf("[DEBUG] snmpv%d, isread %d, hashtype %d, enctype %d\n", snmpversion, snmpread, hashtype, enctype);
+  if (debug)
+    printf("[DEBUG] snmpv%d, isread %d, hashtype %d, enctype %d\n", snmpversion, snmpread, hashtype, enctype);
 
   hydra_register_socket(sp);
 
@@ -531,9 +528,11 @@ void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
             snmpv3infolen = snmpv3info[3] + 4;
             while (snmpv3info[snmpv3infolen - 2] == 4 && snmpv3info[snmpv3infolen - 1] == 0)
               snmpv3infolen -= 2;
-            if (debug) hydra_dump_asciihex(snmpv3info, snmpv3infolen);
+            if (debug)
+              hydra_dump_asciihex(snmpv3info, snmpv3infolen);
             if (snmpv3info[10] == 3 && child_head_no == 0)
-              printf("[INFO] Remote device MAC address is %02x:%02x:%02x:%02x:%02x:%02x\n", (unsigned char)snmpv3info[12], (unsigned char)snmpv3info[13], (unsigned char)snmpv3info[14], (unsigned char)snmpv3info[15], (unsigned char)snmpv3info[16], (unsigned char)snmpv3info[12]);
+              printf("[INFO] Remote device MAC address is %02x:%02x:%02x:%02x:%02x:%02x\n", (unsigned char) snmpv3info[12], (unsigned char) snmpv3info[13],
+                     (unsigned char) snmpv3info[14], (unsigned char) snmpv3info[15], (unsigned char) snmpv3info[16], (unsigned char) snmpv3info[12]);
           }
         }
       }
@@ -543,7 +542,7 @@ void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       hydra_report(stderr, "No valid reply from snmp server, exiting!\n");
       hydra_child_exit(2);
     }
-  }  
+  }
 
   if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
     run = 3;
@@ -566,7 +565,7 @@ void service_snmp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
   }
 }
 
-int service_snmp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_snmp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

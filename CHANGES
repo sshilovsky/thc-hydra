@@ -1,13 +1,29 @@
 Changelog for hydra
 -------------------
 
+Release 7.6
+* Added a wizard script for hydra based on a script by Shivang Desai <shivang.ice.2010@gmail.com>
+* Added module for Siemens S7-300 (submitted by Alexander Timorin and Sergey Gordeychik, thanks!)
+* HTTP HEAD/GET: MD5 digest auth was not working, fixed (thanks to Paul Kenyon)
+* SMTP Enum: HELO is now always sent, better 500 error detection
+* hydra main:
+   - fixed a bug in the IPv6 address parsing when a port was supplied
+   - added info message for pop3, imap and smtp protocol usage
+* hydra GTK: missed some services, added
+* dpl4hydra.sh:
+   - added Siemens S7-300 common passwords to default password list
+   - more broad searching in the list
+* Performed code indention on all C files :-)
+* Makefile patch to ensure .../etc directory is there (thanks to vonnyfly)
+
+
 Release 7.5
 * Moved the license from GPLv3 to AGPLv3 (see LICENSE file)
 * Added module for Asterisk Call Manager
 * Added support for Android where some functions are not available
 * hydra main:
    - reduced the screen output if run without -h, full screen with -h
-   - fix for ipv6 and port parsing with service://[ipv6address]:port/OPTIONS
+   - fix for IPv6 and port parsing with service://[ipv6address]:port/OPTIONS
    - fixed -o output (thanks to www417)
    - warning if HYDRA_PROXY is defined but the module does not use it
    - fixed an issue with large input files and long entries
@@ -26,7 +42,7 @@ Release 7.5
   disabled on Cygwin
 
 
-Release 7.4.x FIX RELEASES for bugs introduced in 7.4
+Release 7.4.3 FIX RELEASES for bugs introduced in 7.4
 * Quickfix for people who do not have libssh installed (won't compile otherwise)
 * Quickfix for http-get/http-head and irc module which would not run due a new feature.
 * Fix for the ssh module that breaks an endless loop if a service becomes unavailable (thanks to shark0der(at)gmail(dot)com for reporting)
@@ -193,7 +209,7 @@ Release 6.2
 * Add support for CRAM-MD5 and DIGEST-MD5 auth to ldap module
 * Fix SASL PLAIN auth method issue
 * Add TLS negotiation support for smtp-auth, pop3, imap, ftp and ldap
-* Added man pages from debian maintainers
+* Added man pages from Debian maintainers
 * Checked Teamspeak module, works on TS2 protocol
 * Add support for SCRAM-SHA1 (RFC 5802), first auth cracker to support it, yeah !
 * New module: XMPP with TLS negotiation and LOGIN, PLAIN, CRAM-MD5, DIGEST-MD5, SCRAM-SHA1 support
@@ -215,7 +231,7 @@ Release 6.2
 
 
 Release 6.1
-* More license updates for the files for the debian guys
+* More license updates for the files for the Debian guys
 * Fix for the configure script to correctly detect postgresql
 * Add checks for libssh v0.4 and support for ssh v1
 * Merge all latest crypto code in sasl files
@@ -223,7 +239,7 @@ Release 6.1
 
 
 Release 6.0
-* Added GPL exception clause to license to allow linking to OpenSSL - debian people need this
+* Added GPL exception clause to license to allow linking to OpenSSL - Debian people need this
 * IPv6 support finally added. Note: sip and socks5 modules do not support IPv6 yet
 * Changes to code and configure script to ensure clean compile on Solaris 11,
   OSX, FreeBSD 8.1, Cygwin and Linux

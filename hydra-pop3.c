@@ -5,7 +5,8 @@
 
 typedef struct pool_str {
   char ip[36];
-/*  int port;*/ // not needed
+
+  /*  int port;*/// not needed
   int pop3_auth_mechanism;
   int disable_tls;
   struct pool_str *next;
@@ -17,19 +18,19 @@ char apop_challenge[300] = "";
 pool *plist = NULL, *p = NULL;
 
 /* functions */
-int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port);
+int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port);
 
 pool *list_create(pool data) {
   pool *p;
-  
+
   if (!(p = malloc(sizeof(pool))))
     return NULL;
 
-  memcpy(p->ip, data.ip, 36);	
+  memcpy(p->ip, data.ip, 36);
   //p->port = data.port;
   p->pop3_auth_mechanism = data.pop3_auth_mechanism;
   p->disable_tls = data.disable_tls;
-  p->next=NULL;
+  p->next = NULL;
 
   return p;
 }
@@ -37,9 +38,9 @@ pool *list_create(pool data) {
 pool *list_insert(pool data) {
   pool *newnode;
 
-  newnode=list_create(data);
+  newnode = list_create(data);
   newnode->next = plist;
-  plist = newnode->next; // to be sure!
+  plist = newnode->next;        // to be sure!
 
   return newnode;
 }
@@ -47,7 +48,7 @@ pool *list_insert(pool data) {
 pool *list_find(char *ip) {
   pool *node = plist;
 
-  while(node != NULL) {
+  while (node != NULL) {
     if (memcmp(node->ip, ip, 36) == 0)
       return node;
     node = node->next;
@@ -58,13 +59,13 @@ pool *list_find(char *ip) {
 
 /* how to know when to release the mem ?
    -> well, after _start has determined which pool number it is */
-int list_remove(pool *node) {
+int list_remove(pool * node) {
   pool *save, *list = plist;
   int ok = -1;
-  
+
   if (list == NULL || node == NULL)
     return -2;
-  
+
   do {
     save = list->next;
     if (list != node)
@@ -73,7 +74,7 @@ int list_remove(pool *node) {
       ok = 0;
     list = save;
   } while (list != NULL);
-  
+
   return ok;
 }
 
@@ -377,7 +378,7 @@ int start_pop3(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
   if ((buf = hydra_receive_line(s)) == NULL) {
     return 4;
- }
+  }
 
   if (buf[0] == '+') {
     hydra_report_found_host(port, ip, "pop3", fp);
@@ -403,7 +404,7 @@ int start_pop3(int s, char *ip, int port, unsigned char options, char *miscptr, 
   return 2;
 }
 
-void service_pop3(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+void service_pop3(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1, sock = -1, i;
   char *ptr = NULL;
 
@@ -429,54 +430,54 @@ void service_pop3(char *ip, int sp, unsigned char options, char *miscptr, FILE *
     case 1:                    /* connect and service init function */
 
       if (sock >= 0)
-         sock = hydra_disconnect(sock);
- //      usleep(300000);
-       if ((options & OPTION_SSL) == 0) {
-         sock = hydra_connect_tcp(ip, port);
-       } else {
-         sock = hydra_connect_ssl(ip, port);
-       }
-       if (sock < 0) {
-         if (verbose || debug)
-           hydra_report(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
-         hydra_child_exit(1);
-       }
-       buf = hydra_receive_line(sock);
-       if (buf == NULL || buf[0] != '+') {       /* check the first line */
-         if (verbose || debug) hydra_report(stderr, "[ERROR] Not an POP3 protocol or service shutdown: %s\n", buf);
-         hydra_child_exit(2);
-       }
+        sock = hydra_disconnect(sock);
+      //      usleep(300000);
+      if ((options & OPTION_SSL) == 0) {
+        sock = hydra_connect_tcp(ip, port);
+      } else {
+        sock = hydra_connect_ssl(ip, port);
+      }
+      if (sock < 0) {
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        hydra_child_exit(1);
+      }
+      buf = hydra_receive_line(sock);
+      if (buf == NULL || buf[0] != '+') {       /* check the first line */
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an POP3 protocol or service shutdown: %s\n", buf);
+        hydra_child_exit(2);
+      }
 
-       ptr = strstr(buf, "<");
-       if (ptr != NULL && buf[0] == '+') {
-         if (ptr[strlen(ptr) - 1] == '\n')
-           ptr[strlen(ptr) - 1] = 0;
-         if (ptr[strlen(ptr) - 1] == '\r')
-           ptr[strlen(ptr) - 1] = 0;
-         strcpy(apop_challenge, ptr);
-       }
-       free(buf);
+      ptr = strstr(buf, "<");
+      if (ptr != NULL && buf[0] == '+') {
+        if (ptr[strlen(ptr) - 1] == '\n')
+          ptr[strlen(ptr) - 1] = 0;
+        if (ptr[strlen(ptr) - 1] == '\r')
+          ptr[strlen(ptr) - 1] = 0;
+        strcpy(apop_challenge, ptr);
+      }
+      free(buf);
 
 #ifdef LIBOPENSSL
-       if (!p->disable_tls) {
-	 /* check for STARTTLS, if available we may have access to more basic auth methods */
-         hydra_send(sock, "STLS\r\n", strlen("STLS\r\n"), 0);
-	 buf = hydra_receive_line(sock);
-	 if (buf[0] != '+') {
-               hydra_report(stderr, "[ERROR] TLS negotiation failed, no answer received from STARTTLS request\n");
-	 } else {
-           free(buf);
-           if ((hydra_connect_to_ssl(sock) == -1)) {
-             if (verbose)
-               hydra_report(stderr, "[ERROR] Can't use TLS\n");
-             p->disable_tls = 1;
-           }
-	   else {
-             if (verbose)
-               hydra_report(stderr, "[VERBOSE] TLS connection done\n");
-           }
-	 }
-       }
+      if (!p->disable_tls) {
+        /* check for STARTTLS, if available we may have access to more basic auth methods */
+        hydra_send(sock, "STLS\r\n", strlen("STLS\r\n"), 0);
+        buf = hydra_receive_line(sock);
+        if (buf[0] != '+') {
+          hydra_report(stderr, "[ERROR] TLS negotiation failed, no answer received from STARTTLS request\n");
+        } else {
+          free(buf);
+          if ((hydra_connect_to_ssl(sock) == -1)) {
+            if (verbose)
+              hydra_report(stderr, "[ERROR] Can't use TLS\n");
+            p->disable_tls = 1;
+          } else {
+            if (verbose)
+              hydra_report(stderr, "[VERBOSE] TLS connection done\n");
+          }
+        }
+      }
 #endif
 
       next_run = 2;
@@ -503,7 +504,7 @@ void service_pop3(char *ip, int sp, unsigned char options, char *miscptr, FILE *
 }
 
 
-int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int myport = PORT_POP3, mysslport = PORT_POP3_SSL;
   char *ptr = NULL;
   int sock = -1;
@@ -511,7 +512,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   char *quit_str = "QUIT\r\n";
   pool p;
 
-  p.pop3_auth_mechanism=AUTH_CLEAR;
+  p.pop3_auth_mechanism = AUTH_CLEAR;
   p.disable_tls = 1;
   memcpy(p.ip, ip, 36);
 
@@ -533,7 +534,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
     return -1;
   }
   buf = hydra_receive_line(sock);
-  if (buf == NULL || buf[0] != '+') {       /* check the first line */
+  if (buf == NULL || buf[0] != '+') {   /* check the first line */
     if (verbose || debug)
       hydra_report(stderr, "[ERROR] Not an POP3 protocol or service shutdown: %s\n", buf);
     return -1;
@@ -550,7 +551,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   free(buf);
 
   /* send capability request */
-  if (hydra_send(sock, capa_str, strlen(capa_str), 0) < 0) {  
+  if (hydra_send(sock, capa_str, strlen(capa_str), 0) < 0) {
     if (verbose || debug)
       hydra_report(stderr, "[ERROR] Can not send the CAPABILITY request\n");
     return -1;
@@ -574,7 +575,6 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
     }
   }
 
-
 #ifdef LIBOPENSSL
   if (!p.disable_tls) {
     /* check for STARTTLS, if available we may have access to more basic auth methods */
@@ -583,7 +583,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
       free(buf);
       buf = hydra_receive_line(sock);
       if (buf[0] != '+') {
-          hydra_report(stderr, "[ERROR] TLS negotiation failed, no answer received from STARTTLS request\n");
+        hydra_report(stderr, "[ERROR] TLS negotiation failed, no answer received from STARTTLS request\n");
       } else {
         free(buf);
         if ((hydra_connect_to_ssl(sock) == -1)) {
@@ -606,7 +606,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
             hydra_report(stderr, "[ERROR] No answer from CAPABILITY request\n");
             return -1;
           }
-	}
+        }
       }
     } else
       hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
@@ -614,7 +614,7 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
 #endif
 
   if (hydra_send(sock, quit_str, strlen(quit_str), 0) < 0) {
-  //we dont care if the server is not receiving the quit msg
+    //we dont care if the server is not receiving the quit msg
   }
   hydra_disconnect(sock);
 
@@ -622,24 +622,24 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
   if (verbose)
     hydra_report(stderr, "[VERBOSE] CAPABILITY: %s", buf);
 
- /* example:
- +OK Capability list follows:
- TOP
- LOGIN-DELAY 180
- UIDL
- USER
- SASL PLAIN LOGIN
- */
+  /* example:
+     +OK Capability list follows:
+     TOP
+     LOGIN-DELAY 180
+     UIDL
+     USER
+     SASL PLAIN LOGIN
+   */
 
- /* according to rfc 2449:
-    The POP3 AUTH command [POP-AUTH] permits the use of [SASL]
-    authentication mechanisms with POP3.  The SASL capability
-    indicates that the AUTH command is available and that it supports
-    an optional base64 encoded second argument for an initial client
-    response as described in the SASL specification.  The argument to
-    the SASL capability is a space separated list of SASL mechanisms
-    which are supported.
- */
+  /* according to rfc 2449:
+     The POP3 AUTH command [POP-AUTH] permits the use of [SASL]
+     authentication mechanisms with POP3.  The SASL capability
+     indicates that the AUTH command is available and that it supports
+     an optional base64 encoded second argument for an initial client
+     response as described in the SASL specification.  The argument to
+     the SASL capability is a space separated list of SASL mechanisms
+     which are supported.
+   */
 
   /* which mean threre will *always* have a space before the LOGIN auth keyword */
   if ((strstr(buf, " LOGIN") == NULL) && (strstr(buf, "NTLM") != NULL)) {
@@ -762,10 +762,10 @@ int service_pop3_init(char *ip, int sp, unsigned char options, char *miscptr, FI
     }
   }
 
-  if(!plist)
-    plist=list_create(p);
-  else 
-    plist=list_insert(p);
+  if (!plist)
+    plist = list_create(p);
+  else
+    plist = list_insert(p);
 
   return 0;
 }

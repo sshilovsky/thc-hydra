@@ -111,7 +111,7 @@ refresh ()
 
 generate ()
 {
-  HYDRAFILE=`echo dpl4hydra_${BRAND}.lst | sed 's/ /_/g'`
+  HYDRAFILE=`echo "dpl4hydra_${BRAND}.lst" | tr '/ =:@\\|;<>"'"'" '_____________'`
 
   if [ ! -r $FULLFILE ]; then
     echo
@@ -133,7 +133,7 @@ generate ()
   cat $FULLFILE 2>/dev/null | grep -i "$PATTERN" | awk -F"," '{ print $5":"$6 }' | sed 's/^[ \t]*//' | sed 's/[ \t]*$//' | sort | uniq > $HYDRAFILE
 
   ENTRIES=`wc -l $HYDRAFILE | awk '{ print $1 }'`
-  if [ $ENTRIES -eq 0 ]; then
+  if [ "$ENTRIES" -eq 0 ]; then
     rm -f $HYDRAFILE
     echo
     echo "ERROR: No matching entries found for $BRAND systems." >&2
@@ -141,7 +141,7 @@ generate ()
     echo
     exit 1
   else
-    if [ $ENTRIES -eq 1 ]; then
+    if [ "$ENTRIES" -eq 1 ]; then
       echo
       echo "File $HYDRAFILE was created with one entry."
       echo
@@ -181,7 +181,7 @@ case "$OPT" in
   "-a" | "all" | "-all" | "--all")             PATTERN=","
                                                BRAND="all"
                                                generate;;
-  *)                                           PATTERN="^${OPT},"
-                                               BRAND=$OPT
+  *)                                           PATTERN="${OPT}"
+                                               BRAND="$OPT"
                                                generate;;
 esac

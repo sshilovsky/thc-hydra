@@ -309,11 +309,10 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
           disable_tls = 0;
         }
       }
-
-#ifdef LIBOPENSSL      
+#ifdef LIBOPENSSL
       if (!disable_tls) {
-	/* if we got a positive answer */
-	if (buf[0] == '2') {
+        /* if we got a positive answer */
+        if (buf[0] == '2') {
           if (strstr(buf, "STARTTLS") != NULL) {
             hydra_send(sock, "STARTTLS\r\n", strlen("STARTTLS\r\n"), 0);
             free(buf);
@@ -323,25 +322,25 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
             } else {
               free(buf);
               if ((hydra_connect_to_ssl(sock) == -1)) {
-        	if (verbose)
+                if (verbose)
                   hydra_report(stderr, "[ERROR] Can't use TLS\n");
                 disable_tls = 1;
                 run = 1;
                 break;
               } else {
-        	if (verbose)
+                if (verbose)
                   hydra_report(stderr, "[VERBOSE] TLS connection done\n");
               }
               /* ask again capability request but in TLS mode */
               if (hydra_send(sock, buffer1, strlen(buffer1), 0) < 0)
-        	hydra_child_exit(2);
+                hydra_child_exit(2);
               buf = smtp_read_server_capacity(sock);
               if (buf == NULL)
-        	hydra_child_exit(2);
+                hydra_child_exit(2);
             }
           } else
             hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
-	} else
+        } else
           hydra_report(stderr, "[ERROR] option to use TLS/SSL failed as it is not supported by the server\n");
       }
 #endif
@@ -437,7 +436,7 @@ void service_smtp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
   }
 }
 
-int service_smtp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_smtp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

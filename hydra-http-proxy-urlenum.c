@@ -19,7 +19,7 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
     return 1;
   }
   pass = hydra_get_next_password();
-  pass = empty; // ignored
+  pass = empty;                 // ignored
 
   strncpy(url, login, sizeof(url) - 1);
   url[sizeof(url) - 1] = 0;
@@ -32,24 +32,22 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
     *ptr = 0;
   if ((ptr = index(mhost, ']')) != NULL)
     *ptr = 0;
-  else
-    if ((ptr = index(mhost, ':')) != NULL)
-      *ptr = 0;
+  else if ((ptr = index(mhost, ':')) != NULL)
+    *ptr = 0;
 
   if (miscptr != NULL && index(miscptr, ':') != NULL) {
     strncpy(mlogin, miscptr, sizeof(mlogin) - 1);
     mlogin[sizeof(mlogin) - 1] = 0;
     ptr = index(mlogin, ':');
     *ptr++ = 0;
-    strncpy(mpass, ptr, sizeof(mpass) -1);
+    strncpy(mpass, ptr, sizeof(mpass) - 1);
     mpass[sizeof(mpass) - 1] = 0;
     auth = 1;
   }
 
   if (http_proxy_auth_mechanism == AUTH_ERROR) {
     //send dummy request
-    sprintf(buffer, "GET %s HTTP/1.0\r\n%sUser-Agent: Mozilla/4.0 (Hydra)\r\n%s\r\n",
-      url, mhost, header);
+    sprintf(buffer, "GET %s HTTP/1.0\r\n%sUser-Agent: Mozilla/4.0 (Hydra)\r\n%s\r\n", url, mhost, header);
     if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
       return 1;
 
@@ -91,9 +89,9 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
       //if server cut the connection, just exit cleanly or 
       //this will be an infinite loop
       if (buf == NULL) {
-	if (verbose)
-	  hydra_report(stderr, "[ERROR] Server did not answer\n");
-	return 3;
+        if (verbose)
+          hydra_report(stderr, "[ERROR] Server did not answer\n");
+        return 3;
       }
 
       if (debug)
@@ -112,7 +110,8 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
 
         /* to be portable, no snprintf, buffer is big enough so it cant overflow */
         //send the first..
-        sprintf(buffer, "GET %s HTTP/1.0\r\n%sProxy-Authorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nProxy-Connection: keep-alive\r\n%s\r\n", url, host, buf1, header);
+        sprintf(buffer, "GET %s HTTP/1.0\r\n%sProxy-Authorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nProxy-Connection: keep-alive\r\n%s\r\n", url, host, buf1,
+                header);
         if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
           return 1;
 
@@ -122,17 +121,17 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
           free(buf);
           buf = hydra_receive_line(s);
         }
-	if (pos != NULL) {
+        if (pos != NULL) {
           char *str;
 
-          pos+=25;
-          if ((str=strchr(pos, '\r')) != NULL) {
+          pos += 25;
+          if ((str = strchr(pos, '\r')) != NULL) {
             pos[str - pos] = 0;
           }
-          if ((str=strchr(pos, '\n')) != NULL) {
-            pos[str - pos] = 0; }
-	}
-
+          if ((str = strchr(pos, '\n')) != NULL) {
+            pos[str - pos] = 0;
+          }
+        }
         //recover challenge
         if (buf != NULL) {
           from64tobits((char *) buf1, pos);
@@ -141,7 +140,8 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
         //Send response
         buildAuthResponse((tSmbNtlmAuthChallenge *) buf1, (tSmbNtlmAuthResponse *) buf2, 0, login, pass, NULL, NULL);
         to64frombits(buf1, buf2, SmbLength((tSmbNtlmAuthResponse *) buf2));
-        sprintf(buffer, "GET %s HTTP/1.0\r\n%sProxy-Authorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nProxy-Connection: keep-alive\r\n%s\r\n", url, host, buf1, header);
+        sprintf(buffer, "GET %s HTTP/1.0\r\n%sProxy-Authorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nProxy-Connection: keep-alive\r\n%s\r\n", url, host, buf1,
+                header);
         if (debug)
           hydra_report(stderr, "C:%s\n", buffer);
         if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
@@ -200,21 +200,19 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
       }
     }
   }
-
   // result analysis
   ptr = ((char *) index(buf, ' ')) + 1;
-  if (*ptr == '2' || (*ptr == '3' && (*(ptr + 2) == '1' || *(ptr + 2) == '2')) ||
-      strncmp(ptr, "404", 4) == 0 || strncmp(ptr, "403", 4) == 0) {
+  if (*ptr == '2' || (*ptr == '3' && (*(ptr + 2) == '1' || *(ptr + 2) == '2')) || strncmp(ptr, "404", 4) == 0 || strncmp(ptr, "403", 4) == 0) {
     hydra_report_found_host(port, ip, "http-proxy", fp);
     if (fp != stdout)
       fprintf(fp, "[%d][http-proxy-urlenum] host: %s   url: %s\n", port, hydra_address2string(ip), url);
     printf("[%d][http-proxy-urlenum] host: %s   url: %s\n", port, hydra_address2string(ip), url);
     hydra_completed_pair_found();
   } else {
-    if (strncmp(ptr, "407", 3) == 0 /*|| strncmp(ptr, "401", 3) == 0*/) {
+    if (strncmp(ptr, "407", 3) == 0 /*|| strncmp(ptr, "401", 3) == 0 */ ) {
       hydra_report(stderr, "[ERROR] Proxy reports bad credentials!\n");
       return 3;
-    } 
+    }
     hydra_completed_pair();
   }
 
@@ -275,7 +273,7 @@ void service_http_proxy_urlenum(char *ip, int sp, unsigned char options, char *m
   }
 }
 
-int service_http_proxy_urlenum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_http_proxy_urlenum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

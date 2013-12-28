@@ -15,7 +15,8 @@ SRC = hydra-vnc.c hydra-pcnfs.c hydra-rexec.c hydra-nntp.c hydra-socks5.c \
       hydra-oracle-listener.c hydra-svn.c hydra-pcanywhere.c hydra-sip.c \
       hydra-oracle.c hydra-vmauthd.c hydra-asterisk.c hydra-firebird.c hydra-afp.c hydra-ncp.c \
       hydra-oracle-sid.c hydra-http-proxy.c hydra-http-form.c hydra-irc.c \
-      hydra-rdp.c crc32.c d3des.c bfg.c ntlm.c sasl.c hmacmd5.c hydra-mod.c
+      hydra-rdp.c hydra-s7-300.c \
+      crc32.c d3des.c bfg.c ntlm.c sasl.c hmacmd5.c hydra-mod.c 
 OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
       hydra-telnet.o hydra-cisco.o hydra-http.o hydra-ftp.o hydra-imap.o \
       hydra-pop3.o hydra-smb.o hydra-icq.o hydra-cisco-enable.o hydra-ldap.o \
@@ -25,7 +26,8 @@ OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
       hydra-oracle-listener.o hydra-svn.o hydra-pcanywhere.o hydra-sip.o \
       hydra-oracle-sid.o hydra-oracle.o hydra-vmauthd.o hydra-asterisk.o hydra-firebird.o hydra-afp.o hydra-ncp.o \
       hydra-http-proxy.o hydra-http-form.o hydra-irc.o \
-      hydra-rdp.o crc32.o d3des.o bfg.o ntlm.o sasl.o hmacmd5.o hydra-mod.o
+      hydra-rdp.o hydra-s7-300.c \
+      crc32.o d3des.o bfg.o ntlm.o sasl.o hmacmd5.o hydra-mod.o
 BINS = hydra pw-inspector
 
 EXTRA_DIST = README README.arm README.palm CHANGES TODO INSTALL LICENSE \
@@ -55,12 +57,12 @@ strip:	all
 	-echo OK > /dev/null && test -x xhydra && strip xhydra || echo OK > /dev/null
 
 install:	strip
-	-mkdir -p $(PREFIX)$(DIR) 
-	cp -f $(BINS) $(PREFIX)$(DIR) && cd $(PREFIX)$(DIR) && chmod 755 $(BINS)
+	-mkdir -p $(PREFIX)$(DIR)
+	cp -f hydra-wizard.sh $(BINS) $(PREFIX)$(DIR) && cd $(PREFIX)$(DIR) && chmod 755 hydra-wizard.sh $(BINS)
 	-echo OK > /dev/null && test -x xhydra && cp xhydra $(PREFIX)$(DIR) && cd $(PREFIX)$(DIR) && chmod 755 xhydra || echo OK > /dev/null
-#	-cp -f dpl4hydra.sh ($PREFIX)/dpl4hydra.sh
 	-sed -e "s|^INSTALLDIR=.*|INSTALLDIR="$(PREFIX)"|" dpl4hydra.sh > $(PREFIX)/bin/dpl4hydra.sh
 	-chmod 755 $(PREFIX)/bin/dpl4hydra.sh
+	-mkdir -p $(PREFIX)/etc/
 	-cp -f *.csv $(PREFIX)/etc/
 	-mkdir -p $(PREFIX)/man/man1
 	-cp -f hydra.1 xhydra.1 pw-inspector.1 $(PREFIX)/man/man1
@@ -69,8 +71,3 @@ clean:
 	rm -rf xhydra pw-inspector hydra *.o core *.core *.stackdump *~ Makefile.in Makefile dev_rfc hydra.restore arm/*.ipk arm/ipkg/usr/bin/* hydra-gtk/src/*.o hydra-gtk/src/xhydra hydra-gtk/stamp-h hydra-gtk/config.status hydra-gtk/errors hydra-gtk/config.log hydra-gtk/src/.deps hydra-gtk/src/Makefile hydra-gtk/Makefile
 	cp -f Makefile.orig Makefile
 
-backup:
-	tar czvf ../hydra-dev.tgz *.c *.h README Makefile.am configure TODO CHANGES INSTALL LICENCE
-
-revise:
-	mv ../hydra-dev.tgz ../hydra-dev-old.tgz

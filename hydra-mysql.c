@@ -55,7 +55,7 @@ char *hydra_mysql_receive_line(int socket) {
   }
   if (i <= 0) {
     if (debug)
-      hydra_report_debug(stderr,"DEBUG_RECV_BEGIN|%s|END\n", buff);
+      hydra_report_debug(stderr, "DEBUG_RECV_BEGIN|%s|END\n", buff);
     free(buff);
     return NULL;
   }
@@ -71,7 +71,7 @@ char *hydra_mysql_receive_line(int socket) {
   }
 
   if (debug)
-    hydra_report_debug(stderr,"DEBUG_RECV_BEGIN|%s|END\n", buff);
+    hydra_report_debug(stderr, "DEBUG_RECV_BEGIN|%s|END\n", buff);
   return buff;
 }
 
@@ -195,20 +195,21 @@ int start_mysql(int sock, char *ip, int port, unsigned char options, char *miscp
     if (mysql == NULL) {
       mysql = mysql_init(NULL);
       if (mysql == NULL) {
-	hydra_report(stderr, "[ERROR] Insufficient memory to allocate new mysql object\n");
-	return 1;
+        hydra_report(stderr, "[ERROR] Insufficient memory to allocate new mysql object\n");
+        return 1;
       }
     }
     /*mysql_options(&mysql,MYSQL_OPT_COMPRESS,0); */
     if (!mysql_real_connect(mysql, hydra_address2string(ip), login, pass, database, 0, NULL, 0)) {
       int my_errno = mysql_errno(mysql);
+
       if (debug)
         hydra_report(stderr, "[ERROR] Failed to connect to database: %s\n", mysql_error(mysql));
 
       /*
-      Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
-      Message: Unknown database '%s'
-      */
+         Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
+         Message: Unknown database '%s'
+       */
       if (my_errno == 1049) {
         hydra_report(stderr, "[ERROR] Unknown database: %s\n", database);
       }
@@ -218,19 +219,19 @@ int start_mysql(int sock, char *ip, int port, unsigned char options, char *miscp
       }
 
       /*
-       http://dev.mysql.com/doc/refman/5.0/en/error-messages-server.html
+         http://dev.mysql.com/doc/refman/5.0/en/error-messages-server.html
 
-       Error: 1044 SQLSTATE: 42000 (ER_DBACCESS_DENIED_ERROR)
-       Message: Access denied for user '%s'@'%s' to database '%s'
+         Error: 1044 SQLSTATE: 42000 (ER_DBACCESS_DENIED_ERROR)
+         Message: Access denied for user '%s'@'%s' to database '%s'
 
-       Error: 1045 SQLSTATE: 28000 (ER_ACCESS_DENIED_ERROR)
-       Message: Access denied for user '%s'@'%s' (using password: %s)
+         Error: 1045 SQLSTATE: 28000 (ER_ACCESS_DENIED_ERROR)
+         Message: Access denied for user '%s'@'%s' (using password: %s)
 
-      */ 
+       */
 
       //if the error is more critical, we just try to reconnect
       //to the db later with the mysql_init
-      if ((my_errno != 1044)&&(my_errno != 1045)) {
+      if ((my_errno != 1044) && (my_errno != 1045)) {
         mysql_close(mysql);
         mysql = NULL;
       }
@@ -345,6 +346,7 @@ void service_mysql(char *ip, int sp, unsigned char options, char *miscptr, FILE 
 
 
 #endif
+
 /************************************************************************/
 
 /* code belowe is copied from mysql 3.23.57 source code (www.mysql.com) */
@@ -359,7 +361,7 @@ struct hydra_rand_struct {
   double max_value_dbl;
 };
 
-void hydra_randominit(struct hydra_rand_struct *rand_st, unsigned long seed1, unsigned long seed2) {        /* For mysql 3.21.# */
+void hydra_randominit(struct hydra_rand_struct *rand_st, unsigned long seed1, unsigned long seed2) {    /* For mysql 3.21.# */
   rand_st->max_value = 0x3FFFFFFFL;
   rand_st->max_value_dbl = (double) rand_st->max_value;
   rand_st->seed1 = seed1 % rand_st->max_value;
@@ -410,7 +412,7 @@ char *hydra_scramble(char *to, const char *message, const char *password) {
 }
 #endif
 
-int service_mysql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_mysql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.
