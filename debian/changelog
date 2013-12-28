@@ -1,3 +1,9 @@
+hydra (7.6-0kali1) kali; urgency=low
+
+  * Upstream import
+
+ -- Mati Aharoni <muts@kali.org>  Sat, 28 Dec 2013 10:34:01 -0500
+
 hydra (7.5-1kali1) kali; urgency=low
 
   * Updated the license to AGPL
