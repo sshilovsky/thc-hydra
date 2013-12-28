@@ -39,7 +39,8 @@ int start_ftp(int s, char *ip, int port, unsigned char options, char *miscptr, F
   }
   if (buf[0] != '3') {
     if (buf) {
-      if (verbose || debug) hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
+      if (verbose || debug)
+        hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
       free(buf);
     }
     return 3;
@@ -103,7 +104,8 @@ void service_ftp_core(char *ip, int sp, unsigned char options, char *miscptr, FI
       usleep(250);
       buf = hydra_receive_line(sock);
       if (buf == NULL || buf[0] != '2') {       /* check the first line */
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
         hydra_child_exit(2);
         if (buf != NULL)
           free(buf);
@@ -123,7 +125,8 @@ void service_ftp_core(char *ip, int sp, unsigned char options, char *miscptr, FI
         }
         buf = hydra_receive_line(sock);
         if (buf == NULL) {
-          if (verbose || debug) hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
+          if (verbose || debug)
+            hydra_report(stderr, "[ERROR] Not an FTP protocol or service shutdown: %s\n", buf);
           hydra_child_exit(2);
         }
         if (buf[0] == '2') {
@@ -170,7 +173,7 @@ void service_ftps(char *ip, int sp, unsigned char options, char *miscptr, FILE *
   service_ftp_core(ip, sp, options, miscptr, fp, port, 1);
 }
 
-int service_ftp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_ftp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

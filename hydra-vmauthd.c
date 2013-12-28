@@ -103,7 +103,8 @@ void service_vmauthd(char *ip, int sp, unsigned char options, char *miscptr, FIL
 
       if (buf == NULL || strstr(buf, "220 VMware Authentication Daemon Version ") == NULL) {
         /* check the first line */
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an vmware authd protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an vmware authd protocol or service shutdown: %s\n", buf);
         hydra_child_exit(2);
       }
       if ((strstr(buf, "Version 1.00") == NULL) && (strstr(buf, "Version 1.10") == NULL)) {
@@ -141,7 +142,7 @@ void service_vmauthd(char *ip, int sp, unsigned char options, char *miscptr, FIL
   }
 }
 
-int service_vmauthd_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_vmauthd_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

@@ -371,7 +371,8 @@ void sasl_digest_md5(char *result, char *login, char *pass, char *buffer, char *
   for (i = 0; i < ind; i++) {
     //removing space chars between comma separated value if any
     while ((array[i] != NULL) && (array[i][0] == ' ')) {
-      char *tmp=strdup(array[i]);
+      char *tmp = strdup(array[i]);
+
       memset(array[i], 0, sizeof(array[i]));
       strcpy(array[i], tmp + 1);
       free(tmp);
@@ -483,9 +484,8 @@ void sasl_digest_md5(char *result, char *login, char *pass, char *buffer, char *
     memset(algo, 0, sizeof(algo));
     strcpy(algo, "MD5");
   }
-
   //xmpp case, some xmpp server is not sending the realm so we have to set it up
-  if ((strlen(realm)==0) && (strstr(type, "xmpp") != NULL))
+  if ((strlen(realm) == 0) && (strstr(type, "xmpp") != NULL))
     snprintf(realm, sizeof(realm), "%s", miscptr);
 
   //compute ha1
@@ -505,8 +505,8 @@ void sasl_digest_md5(char *result, char *login, char *pass, char *buffer, char *
       memset(buffer3, 0, sizeof(buffer3));
       pbuffer = buffer3;
       for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
-	sprintf(pbuffer, "%02x", response[i]);
-	pbuffer += 2;
+        sprintf(pbuffer, "%02x", response[i]);
+        pbuffer += 2;
       }
       sprintf(buffer, "%s:%s:%s", buffer3, nonce, "hydra");
     } else {
@@ -579,22 +579,22 @@ void sasl_digest_md5(char *result, char *login, char *pass, char *buffer, char *
       snprintf(result, 500, "username=\"%s\",realm=\"%s\",nonce=\"%s\",cnonce=\"hydra\",nc=00000001,algorithm=%s,qop=\"auth\",digest-uri=\"%s/%s\",response=%s", preplogin, realm,
                nonce, algo, type, realm, buffer);
     } else {
-    if  (strstr(type, "sip") != NULL) {
-      snprintf(result, 500, "username=\"%s\",realm=\"%s\",nonce=\"%s\",uri=\"%s:%s\",response=%s", preplogin, realm, nonce, type, realm, buffer);
-    } else {
-      if (use_proxy == 1 && proxy_authentication != NULL)
-        snprintf(result, 500,
-                 "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
-                 type, webtarget, webport, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, proxy_authentication, header);
-      else {
-        if (use_proxy == 1)
+      if (strstr(type, "sip") != NULL) {
+        snprintf(result, 500, "username=\"%s\",realm=\"%s\",nonce=\"%s\",uri=\"%s:%s\",response=%s", preplogin, realm, nonce, type, realm, buffer);
+      } else {
+        if (use_proxy == 1 && proxy_authentication != NULL)
           snprintf(result, 500,
-                   "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
-                   type, webtarget, webport, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, header);
-        else
-          snprintf(result, 500,
-                   "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
-                   type, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, header);
+                   "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
+                   type, webtarget, webport, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, proxy_authentication, header);
+        else {
+          if (use_proxy == 1)
+            snprintf(result, 500,
+                     "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
+                     type, webtarget, webport, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, header);
+          else
+            snprintf(result, 500,
+                     "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: Digest username=\"%s\", realm=\"%s\", response=\"%s\", nonce=\"%s\", cnonce=\"hydra\", nc=00000001, algorithm=%s, qop=auth, uri=\"%s\"\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
+                     type, miscptr, webtarget, preplogin, realm, buffer, nonce, algo, miscptr, header);
         }
       }
     }

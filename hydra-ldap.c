@@ -85,9 +85,9 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     buffer[15 + strlen(miscptr)] = strlen(authm);
     memcpy(&buffer[16 + strlen(miscptr)], authm, strlen(authm));
   }
-  if (hydra_send(s, (char*)buffer, length, 0) < 0)
+  if (hydra_send(s, (char *) buffer, length, 0) < 0)
     return 1;
-  if ((buf = (unsigned char*) hydra_receive_line(s)) == NULL)
+  if ((buf = (unsigned char *) hydra_receive_line(s)) == NULL)
     return 1;
 
   if (buf[0] != 0 && buf[0] != 32 && buf[9] == 2) {
@@ -119,7 +119,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     char *ptr;
     char buf2[32];
 
-    ptr = strstr((char*) buf, "<");
+    ptr = strstr((char *) buf, "<");
     sasl_cram_md5(buf2, pass, ptr);
     if (buf2 == NULL)
       return 1;
@@ -158,10 +158,10 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     buffer[18 + strlen(miscptr) + strlen("CRAM-MD5") + strlen(login)] = ' ';
     memcpy(&buffer[18 + strlen(miscptr) + strlen("CRAM-MD5") + strlen(login) + 1], buf2, strlen(buf2));
 
-    if (hydra_send(s, (char*)buffer, length, 0) < 0)
+    if (hydra_send(s, (char *) buffer, length, 0) < 0)
       return 1;
     free(buf);
-    if ((buf = (unsigned char*) hydra_receive_line(s)) == NULL)
+    if ((buf = (unsigned char *) hydra_receive_line(s)) == NULL)
       return 1;
   } else {
     if (ldap_auth_mechanism == AUTH_DIGESTMD5) {
@@ -169,7 +169,7 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
       char buffer2[500];
       int ind = 0;
 
-      ptr = strstr((char*)buf, "realm=");
+      ptr = strstr((char *) buf, "realm=");
 
       counter++;
       if (strstr(miscptr, "^USER^") != NULL) {
@@ -275,10 +275,10 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
       memcpy(&buffer[ind + strlen(miscptr) + strlen("DIGEST-MD5")], buffer2, strlen(buffer2));
       ind++;
 
-      if (hydra_send(s, (char*)buffer, length, 0) < 0)
+      if (hydra_send(s, (char *) buffer, length, 0) < 0)
         return 1;
       free(buf);
-      if ((buf = (unsigned char*) hydra_receive_line(s)) == NULL)
+      if ((buf = (unsigned char *) hydra_receive_line(s)) == NULL)
         return 1;
     }
   }
@@ -314,7 +314,6 @@ int start_ldap(int s, char *ip, int port, unsigned char options, char *miscptr, 
     sleep(1);
     hydra_child_exit(2);
   }
-
 //0 0x30, 0x84, 0x20, 0x20, 0x20, 0x10, 0x02, 0x01,
 //8 0x01, 0x61, 0x84, 0x20, 0x20, 0x20, 0x07, 0x0a,
 //16 0x01, 0x20, 0x04, 0x20, 0x04, 0x20, 0x00, 0x00,
@@ -385,7 +384,7 @@ void service_ldap(char *ip, int sp, unsigned char options, char *miscptr, FILE *
         if (hydra_send(sock, confidentiality_required, strlen(confidentiality_required), 0) < 0)
           hydra_child_exit(1);
 
-        if ((buf = (unsigned char*) hydra_receive_line(sock)) == NULL)
+        if ((buf = (unsigned char *) hydra_receive_line(sock)) == NULL)
           hydra_child_exit(1);
 
         if ((buf[0] != 0 && buf[9] == 0) || (buf[0] != 32 && buf[9] == 32)) {
@@ -438,7 +437,7 @@ void service_ldap3_digest_md5(char *ip, int sp, unsigned char options, char *mis
   service_ldap(ip, sp, options, miscptr, fp, port, 3, AUTH_DIGESTMD5);
 }
 
-int service_ldap_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_ldap_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

@@ -53,13 +53,14 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if (verbose)
     hydra_report(stderr, "DEBUG S: %s\n", buf);
 
-  if ((strstr(buf, CHALLENGE_STR) != NULL)||(strstr(buf, CHALLENGE_STR2) != NULL)) {
+  if ((strstr(buf, CHALLENGE_STR) != NULL) || (strstr(buf, CHALLENGE_STR2) != NULL)) {
     /*
        the challenge string is sent depending of the
        auth chosen it's the case for login auth
      */
 
     char *ptr = strstr(buf, CHALLENGE_STR);
+
     if (!ptr)
       ptr = strstr(buf, CHALLENGE_STR2);
     char *ptr_end = strstr(ptr, CHALLENGE_END_STR);
@@ -92,8 +93,9 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           if (buf == NULL)
             return 1;
           /* server now would ask for the password */
-          if ((strstr(buf, CHALLENGE_STR) != NULL)||(strstr(buf, CHALLENGE_STR2) != NULL)) {
+          if ((strstr(buf, CHALLENGE_STR) != NULL) || (strstr(buf, CHALLENGE_STR2) != NULL)) {
             char *ptr = strstr(buf, CHALLENGE_STR);
+
             if (!ptr)
               ptr = strstr(buf, CHALLENGE_STR2);
             char *ptr_end = strstr(ptr, CHALLENGE_END_STR);
@@ -186,9 +188,10 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
         if (buf == NULL)
           return 1;
 
-        if ((strstr(buf, CHALLENGE_STR) != NULL)||(strstr(buf, CHALLENGE_STR2) != NULL)) {
+        if ((strstr(buf, CHALLENGE_STR) != NULL) || (strstr(buf, CHALLENGE_STR2) != NULL)) {
           char serverfirstmessage[200];
           char *ptr = strstr(buf, CHALLENGE_STR);
+
           if (!ptr)
             ptr = strstr(buf, CHALLENGE_STR2);
           char *ptr_end = strstr(ptr, CHALLENGE_END_STR);
@@ -219,7 +222,8 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           hydra_tobase64((unsigned char *) buffer2, strlen(buffer2), sizeof(buffer2));
           snprintf(buffer, sizeof(buffer), "%s%s%s", RESPONSE_STR, buffer2, RESPONSE_END_STR);
         } else {
-          if (verbose || debug) hydra_report(stderr, "[ERROR] Not a valid server challenge\n");
+          if (verbose || debug)
+            hydra_report(stderr, "[ERROR] Not a valid server challenge\n");
           free(buf);
           return 1;
         }
@@ -276,7 +280,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
   //so for o.nimbuzz.com will get nimbuzz.com
   //and hermes.jabber.org will get jabber.org
 
-  domain=strchr(target, '.');
+  domain = strchr(target, '.');
   if (!domain) {
     hydra_report(stderr, "[ERROR] can't extract the domain name, you have to specify a fqdn xmpp server, the domain name will be used in the jabber init request\n");
     hydra_child_exit(1);
@@ -285,7 +289,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
   enddomain = strrchr(target, '.');
   //check if target is not already a domain name aka only . char in the string
   if (enddomain && (enddomain == domain)) {
-    domain=target;
+    domain = target;
   } else {
     //moving to pass the . char
     domain = domain + 1;
@@ -328,7 +332,8 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
         hydra_child_exit(1);
 
       if (strstr(buf, "<stream:stream") == NULL) {
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an xmpp protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an xmpp protocol or service shutdown: %s\n", buf);
         free(buf);
         hydra_child_exit(1);
       }
@@ -415,7 +420,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
           hydra_report(stderr, "[VERBOSE] using XMPP DIGEST-MD5 AUTH mechanism\n");
           break;
 #endif
-        }            
+        }
       }
 #ifdef LIBOPENSSL
       //check if tls is not wanted and if tls is available
@@ -474,7 +479,7 @@ void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *m
   }
 }
 
-int service_xmpp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_xmpp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

@@ -22,7 +22,7 @@ int start_http_proxy(int s, char *ip, int port, unsigned char options, char *mis
     strcpy(host, "Host: www.microsoft.com\r\n");
   } else {
     sprintf(url, "%.200s", miscptr);
-    ptr = strstr(miscptr, "://"); // :// check is in hydra.c
+    ptr = strstr(miscptr, "://");       // :// check is in hydra.c
     sprintf(host, "Host: %.200s", ptr + 3);
     if ((ptr = index(host, '/')) != NULL)
       *ptr = 0;
@@ -75,7 +75,7 @@ int start_http_proxy(int s, char *ip, int port, unsigned char options, char *mis
     //this will be an infinite loop
     if (buf == NULL) {
       if (verbose)
-	hydra_report(stderr, "[ERROR] Server did not answer\n");
+        hydra_report(stderr, "[ERROR] Server did not answer\n");
       return 3;
     }
 
@@ -109,19 +109,19 @@ int start_http_proxy(int s, char *ip, int port, unsigned char options, char *mis
       if (pos != NULL) {
         char *str;
 
-        pos+=25;
-        if ((str=strchr(pos, '\r')) != NULL) {
+        pos += 25;
+        if ((str = strchr(pos, '\r')) != NULL) {
           pos[str - pos] = 0;
         }
-        if ((str=strchr(pos, '\n')) != NULL) {
-          pos[str - pos] = 0; }
+        if ((str = strchr(pos, '\n')) != NULL) {
+          pos[str - pos] = 0;
+        }
       }
       //recover challenge
       if (buf != NULL) {
         from64tobits((char *) buf1, pos);
         free(buf);
       }
-
       //Send response
       buildAuthResponse((tSmbNtlmAuthChallenge *) buf1, (tSmbNtlmAuthResponse *) buf2, 0, login, pass, NULL, NULL);
       to64frombits(buf1, buf2, SmbLength((tSmbNtlmAuthResponse *) buf2));
@@ -192,9 +192,8 @@ int start_http_proxy(int s, char *ip, int port, unsigned char options, char *mis
   } else {
     if (*ptr != '4')
       hydra_report(stderr, "[INFO] Unusual return code: %c for %s:%s\n", (char) *(index(buf, ' ') + 1), login, pass);
-    else
-      if (verbose && *(ptr + 2) == '3')
-        hydra_report(stderr, "[INFO] Potential success, could be false positive: %s:%s\n", login, pass);
+    else if (verbose && *(ptr + 2) == '3')
+      hydra_report(stderr, "[INFO] Potential success, could be false positive: %s:%s\n", login, pass);
     hydra_completed_pair();
   }
 
@@ -256,7 +255,7 @@ void service_http_proxy(char *ip, int sp, unsigned char options, char *miscptr, 
   }
 }
 
-int service_http_proxy_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_http_proxy_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

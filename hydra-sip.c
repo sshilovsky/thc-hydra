@@ -1,3 +1,4 @@
+
 /* simple sip digest auth (md5) module 2009/02/19 
  * written by gh0st 2005
  * modified by Jean-Baptiste Aviat <jba [at] hsc [dot] `french tld`> - should
@@ -77,43 +78,42 @@ int start_sip(int s, char *ip, char *lip, int port, int lport, unsigned char opt
       i = hydra_recv(s, (char *) buf, sizeof(buf));
       buf[sizeof(buf) - 1] = '\0';
       if (strncmp(buf, "SIP/2.0 404", 11) == 0) {
-	hydra_report(stdout, "[ERROR] Get error code 404 : user '%s' not found\n", login);
-	return 2;
+        hydra_report(stdout, "[ERROR] Get error code 404 : user '%s' not found\n", login);
+        return 2;
       }
       if (strncmp(buf, "SIP/2.0 606", 11) == 0) {
-        char *ptr=NULL;
+        char *ptr = NULL;
         int i = 0;
 
         // if we already tried to connect, exit
         if (external_ip_addr[0]) {
-          hydra_report(stdout, "[ERROR] Get error code 606 : session is not acceptable by the server\n");          
+          hydra_report(stdout, "[ERROR] Get error code 606 : session is not acceptable by the server\n");
           return 2;
         }
-        
+
         if (verbose)
           hydra_report(stdout, "[VERBOSE] Get error code 606 : session is not acceptable by the server,\n"
-                                          "maybe it's an addressing issue as you are using NAT, trying to reconnect\n"
-                                          "using addr from the server reply\n");
+                       "maybe it's an addressing issue as you are using NAT, trying to reconnect\n" "using addr from the server reply\n");
         /* 
-        SIP/2.0 606 Not Acceptable
-        Via: SIP/2.0/UDP 192.168.0.21:46759;received=82.227.229.137
-        */
+           SIP/2.0 606 Not Acceptable
+           Via: SIP/2.0/UDP 192.168.0.21:46759;received=82.227.229.137
+         */
 #ifdef HAVE_PCRE
         if (hydra_string_match(buf, "Via: SIP.*received=")) {
-          ptr=strstr(buf, "received=");
+          ptr = strstr(buf, "received=");
 #else
-        if ((ptr=strstr(buf, "received="))) {
+        if ((ptr = strstr(buf, "received="))) {
 #endif
-        strncpy(external_ip_addr, ptr+strlen("received="), sizeof(external_ip_addr));
-        external_ip_addr[sizeof(external_ip_addr) - 1] = '\0';
-        for (i = 0; i < strlen(external_ip_addr); i++) {
-          if (external_ip_addr[i] <= 32) {
-            external_ip_addr[i] = '\0';
+          strncpy(external_ip_addr, ptr + strlen("received="), sizeof(external_ip_addr));
+          external_ip_addr[sizeof(external_ip_addr) - 1] = '\0';
+          for (i = 0; i < strlen(external_ip_addr); i++) {
+            if (external_ip_addr[i] <= 32) {
+              external_ip_addr[i] = '\0';
+            }
           }
-        }
-        if (verbose)
-          hydra_report(stderr, "[VERBOSE] Will reconnect using external IP address %s\n", external_ip_addr);
-        return 1;
+          if (verbose)
+            hydra_report(stderr, "[VERBOSE] Will reconnect using external IP address %s\n", external_ip_addr);
+          return 1;
         }
         hydra_report(stderr, "[ERROR] Could not find external IP address in server answer\n");
         return 2;
@@ -127,6 +127,7 @@ int start_sip(int s, char *ip, char *lip, int port, int lport, unsigned char opt
   if (verbose)
     hydra_report(stderr, "[INFO] S: %s\n", buf);
   char buffer2[512];
+
   sasl_digest_md5(buffer2, login, pass, strstr(buf, "WWW-Authenticate: Digest") + strlen("WWW-Authenticate: Digest") + 1, host, "sip", NULL, 0, NULL);
 
   memset(buffer, 0, SIP_MAX_BUF);
@@ -135,10 +136,7 @@ int start_sip(int s, char *ip, char *lip, int port, int lport, unsigned char opt
            "Via: SIP/2.0/UDP %s:%i\n"
            "From: <sip:%s@%s>\n"
            "To: <sip:%s@%s>\n"
-           "Call-ID: 1337@%s\n"
-           "CSeq: %i REGISTER\n"
-           "Authorization: Digest %s\n"
-           "Content-Length: 0\n\n", host, lip, lport, login, host, login, host, host, cseq, buffer2);
+           "Call-ID: 1337@%s\n" "CSeq: %i REGISTER\n" "Authorization: Digest %s\n" "Content-Length: 0\n\n", host, lip, lport, login, host, login, host, host, cseq, buffer2);
 
   cseq++;
   if (verbose)
@@ -181,6 +179,7 @@ void service_sip(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
   int myport = PORT_SIP, mysslport = PORT_SIP_SSL;
 
   char *lip = get_iface_ip((int) *(&ip[1]));
+
   hydra_register_socket(sp);
 
   // FIXME IPV6
@@ -289,7 +288,7 @@ char *get_iface_ip(unsigned long int ip) {
 
 #endif
 
-int service_sip_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_sip_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

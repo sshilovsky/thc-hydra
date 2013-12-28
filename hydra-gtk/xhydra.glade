@@ -409,6 +409,147 @@
 				</widget>
 			      </child>
 
+			      <child>
+				<widget class="GtkListItem" id="listitem2100">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">sshkey</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2101">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">s7-300</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2102">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes"></property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2103">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">afp</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2104">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">ftps</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2105">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">http-get-form</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2106">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">http-post-form</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2107">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">http-proxy-url</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2108">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">https-get-form</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2109">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">https-post-form</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2110">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">irc</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2111">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">ldap3-crammd5</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2112">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">ldap3-digestmd5</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2113">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">mssql</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2114">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">oracle</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2115">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">oracle-sid</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2116">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">oracle-listener</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2117">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">rdp</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2118">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">ssh</property>
+				</widget>
+			      </child>
+			      <child>
+				<widget class="GtkListItem" id="listitem2119">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">xmpp</property>
+				</widget>
+			      </child>
+
 			    </widget>
 			  </child>
 			</widget>

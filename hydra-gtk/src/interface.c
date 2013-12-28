@@ -257,6 +257,7 @@ GtkWidget *create_wndMain(void) {
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "rexec");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "rlogin");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "rsh");
+  cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "s7-300");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "sapr3");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "sip");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "smb");
@@ -264,6 +265,7 @@ GtkWidget *create_wndMain(void) {
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "snmp");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "socks5");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "ssh");
+  cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "sshkey");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "svn");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "teamspeak");
   cmbProtocol_items = g_list_append(cmbProtocol_items, (gpointer) "telnet");

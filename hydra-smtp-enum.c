@@ -46,14 +46,14 @@ int start_smtp_enum(int s, char *ip, int port, unsigned char options, char *misc
     } else {
       snprintf(buffer, sizeof(buffer), "MAIL FROM: root\r\n");
     }
-    if (verbose)
+    if (debug)
       hydra_report(stderr, "DEBUG C: %s", buffer);
     if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
       return 1;
     }
     if ((buf = hydra_receive_line(s)) == NULL)
       return (1);
-    if (verbose)
+    if (debug)
       hydra_report(stderr, "DEBUG S: %s", buf);
     /* good return values are something like 25x */
 #ifdef HAVE_PCRE
@@ -70,7 +70,7 @@ int start_smtp_enum(int s, char *ip, int port, unsigned char options, char *misc
     } else {
       err = strstr(buf, "Error");
       if (err) {
-        if (verbose) {
+        if (debug) {
           hydra_report(stderr, "Server %s", err);
         }
         free(buf);
@@ -94,14 +94,14 @@ int start_smtp_enum(int s, char *ip, int port, unsigned char options, char *misc
       snprintf(buffer, sizeof(buffer), "%s %s\r\n", cmd, login);
     }
   }
-  if (verbose)
+  if (debug)
     hydra_report(stderr, "DEBUG C: %s", buffer);
   if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
     return 1;
   }
   if ((buf = hydra_receive_line(s)) == NULL)
     return (1);
-  if (verbose)
+  if (debug)
     hydra_report(stderr, "DEBUG S: %s", buf);
   /* good return values are something like 25x */
 #ifdef HAVE_PCRE
@@ -117,23 +117,27 @@ int start_smtp_enum(int s, char *ip, int port, unsigned char options, char *misc
     return 1;
   }
   err = strstr(buf, "Error");
-  if (err || tosent) {
+  if (err || tosent || strncmp(buf, "50", 2) == 0) {
     // we should report command not identified by the server
     //502 5.5.2 Error: command not recognized
-#ifdef HAVE_PCRE
-    if ((verbose || hydra_string_match(buf, "\\scommand\\snot\\srecognized")) && err) {
-#else
-    if ((verbose || strstr(buf, "command") != NULL) && err) {
-#endif
-      hydra_report(stderr, "Server %s", err);
+//#ifdef HAVE_PCRE
+//    if ((debug || hydra_string_match(buf, "\\scommand\\snot\\srecognized")) && err) {
+//#else
+//    if ((debug || strstr(buf, "command") != NULL) && err) {
+//#endif
+//      hydra_report(stderr, "Server %s", err);
+//    }
+    if (strncmp(buf, "500 ", 4) == 0) {
+      hydra_report(stderr, "[ERROR] command is disabled on the server (choose different method): %s", buf);
+      free(buf);
+      return 3;
     }
     memset(buffer, 0, sizeof(buffer));
     //503 5.5.1 Error: nested MAIL command
     strncpy(buffer, "RSET\r\n", sizeof(buffer));
     free(buf);
-    if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
+    if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
       return 1;
-    }
     if ((buf = hydra_receive_line(s)) == NULL)
       return 1;
   }
@@ -181,16 +185,24 @@ void service_smtp_enum(char *ip, int sp, unsigned char options, char *miscptr, F
         hydra_report(stderr, "Warning: SMTP does not allow to connect: %s\n", buf);
         hydra_child_exit(2);
       }
-      while (strstr(buf, "220 ") == NULL) {
-        free(buf);
-        buf = hydra_receive_line(sock);
-      }
+//      while (strstr(buf, "220 ") == NULL) {
+//        free(buf);
+//        buf = hydra_receive_line(sock);
+//      }
 
+//      if (buf[0] != '2') {
+      if (hydra_send(sock, buffer, strlen(buffer), 0) < 0) {
+        free(buf);
+        hydra_child_exit(2);
+      }
+//      }
+
+      free(buf);
+      if ((buf = hydra_receive_line(sock)) == NULL)
+        hydra_child_exit(2);
       if (buf[0] != '2') {
-        if (hydra_send(sock, buffer, strlen(buffer), 0) < 0) {
-          free(buf);
-          hydra_child_exit(2);
-        }
+        hydra_report(stderr, "Warning: SMTP does not respond correctly to HELO: %s\n", buf);
+        hydra_child_exit(2);
       }
 
       if ((miscptr != NULL) && (strlen(miscptr) > 0)) {
@@ -203,16 +215,17 @@ void service_smtp_enum(char *ip, int sp, unsigned char options, char *miscptr, F
         if (strncmp(miscptr, "RCPT", 4) == 0)
           smtp_enum_cmd = RCPT;
       }
-      if (verbose) {
+      if (debug) {
         switch (smtp_enum_cmd) {
+          hydra_report(stdout, "[VERBOSE] ");
         case VRFY:
-          hydra_report(stderr, "using SMTP VRFY command\n");
+          hydra_report(stdout, "using SMTP VRFY command\n");
           break;
         case EXPN:
-          hydra_report(stderr, "using SMTP EXPN command\n");
+          hydra_report(stdout, "using SMTP EXPN command\n");
           break;
         case RCPT:
-          hydra_report(stderr, "using SMTP RCPT TO command\n");
+          hydra_report(stdout, "using SMTP RCPT TO command\n");
           break;
         }
       }
@@ -236,7 +249,7 @@ void service_smtp_enum(char *ip, int sp, unsigned char options, char *miscptr, F
   }
 }
 
-int service_smtp_enum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_smtp_enum_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

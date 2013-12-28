@@ -187,7 +187,7 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       //send auth and receive challenge
       buildAuthRequest((tSmbNtlmAuthRequest *) buf2, 0, NULL, NULL);
       to64frombits(buf1, buf2, SmbLength((tSmbNtlmAuthRequest *) buf2));
-      sprintf(buffer, "AUTHINFO SASL NTLM %s\r\n", (char*)buf1);
+      sprintf(buffer, "AUTHINFO SASL NTLM %s\r\n", (char *) buf1);
       if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
         return 1;
       }
@@ -204,7 +204,7 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
       buildAuthResponse((tSmbNtlmAuthChallenge *) buf1, (tSmbNtlmAuthResponse *) buf2, 0, login, pass, NULL, NULL);
       to64frombits(buf1, buf2, SmbLength((tSmbNtlmAuthResponse *) buf2));
-      sprintf(buffer, "%s\r\n", (char*)buf1);
+      sprintf(buffer, "%s\r\n", (char *) buf1);
     }
     break;
 
@@ -218,7 +218,8 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       if (buf == NULL)
         return 1;
       if (buf[0] != '3') {
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an NNTP protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an NNTP protocol or service shutdown: %s\n", buf);
         free(buf);
         return (3);
       }
@@ -286,7 +287,8 @@ void service_nntp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
 //      usleep(300000);
       buf = hydra_receive_line(sock);
       if (buf == NULL || buf[0] != '2') {       /* check the first line */
-        if (verbose || debug) hydra_report(stderr, "[ERROR] Not an NNTP protocol or service shutdown: %s\n", buf);
+        if (verbose || debug)
+          hydra_report(stderr, "[ERROR] Not an NNTP protocol or service shutdown: %s\n", buf);
         hydra_child_exit(2);
       }
       free(buf);
@@ -301,8 +303,8 @@ void service_nntp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
       }
 #ifdef LIBOPENSSL
       if (!disable_tls) {
-	/* if we got a positive answer */
-	if (strstr(buf, "STARTTLS") != NULL) {
+        /* if we got a positive answer */
+        if (strstr(buf, "STARTTLS") != NULL) {
           hydra_send(sock, "STARTTLS\r\n", strlen("STARTTLS\r\n"), 0);
           free(buf);
           buf = hydra_receive_line(sock);
@@ -315,13 +317,13 @@ void service_nntp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
             free(buf);
             if ((hydra_connect_to_ssl(sock) == -1)) {
               if (verbose)
-        	hydra_report(stderr, "[ERROR] Can't use TLS\n");
+                hydra_report(stderr, "[ERROR] Can't use TLS\n");
               disable_tls = 1;
               run = 1;
               break;
             } else {
               if (verbose)
-        	hydra_report(stderr, "[VERBOSE] TLS connection done\n");
+                hydra_report(stderr, "[VERBOSE] TLS connection done\n");
             }
             /* ask again capability request but in TLS mode */
             if (hydra_send(sock, buffer1, strlen(buffer1), 0) < 0)
@@ -334,7 +336,7 @@ void service_nntp(char *ip, int sp, unsigned char options, char *miscptr, FILE *
               hydra_child_exit(2);
             }
           }
-	}
+        }
       }
 #endif
 
@@ -458,7 +460,7 @@ SASL PLAIN DIGEST-MD5 LOGIN NTLM CRAM-MD5
   }
 }
 
-int service_nntp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_nntp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

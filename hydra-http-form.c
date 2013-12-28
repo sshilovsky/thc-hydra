@@ -1,3 +1,4 @@
+
 /*
 
 Hydra Form Module
@@ -61,6 +62,7 @@ int auth_flag = 0;
 
 char redirected_url_buff[2048] = "";
 int redirected_flag = 0;
+
 #define MAX_REDIRECT 8
 int redirected_cpt = MAX_REDIRECT;
 char cookie[4096] = "", cmiscptr[1024];
@@ -81,10 +83,10 @@ int strpos(char *str, char *target) {
 
 char *html_encode(char *string) {
   char *ret = string;
-  
+
   if (ret == NULL)
     return NULL;
-    
+
   if (index(ret, '%') != NULL)
     ret = hydra_strrep(ret, "%", "%25");
   if (index(ret, ' ') != NULL)
@@ -132,7 +134,6 @@ int analyze_server_response(int s) {
         *endloc = 0;
       strcpy(redirected_url_buff, str);
     }
-    
     //there can be multiple cookies
     if (hydra_strcasestr(buf, "Set-Cookie: ") != NULL) {
       char *cookiebuf = buf;
@@ -150,9 +151,8 @@ int analyze_server_response(int s) {
         //terminate string after cookie data
         if (endcookie1 != NULL && endcookie1 < endcookie2)
           *endcookie1 = 0;
-        else
-          if (endcookie2 != NULL)
-            *endcookie2 = 0;
+        else if (endcookie2 != NULL)
+          *endcookie2 = 0;
         // is the cookie already there? if yes, remove it!
         if (index(startcookie, '=') != NULL && (ptr = index(startcookie, '=')) - startcookie + 1 <= sizeof(tmpname)) {
           strncpy(tmpname, startcookie, sizeof(tmpname) - 2);
@@ -173,7 +173,8 @@ int analyze_server_response(int s) {
               ptr2 += 2;
               strncat(tmpcookie, ptr2, sizeof(tmpcookie) - strlen(tmpcookie) - 1);
             }
-            if (debug) printf("[DEBUG] removing cookie %s in jar\n before: %s\n after:  %s\n", tmpname, cookie, tmpcookie);
+            if (debug)
+              printf("[DEBUG] removing cookie %s in jar\n before: %s\n after:  %s\n", tmpname, cookie, tmpcookie);
             strcpy(cookie, tmpcookie);
           }
         }
@@ -200,7 +201,8 @@ int analyze_server_response(int s) {
     free(buf);
   }
   if (runs == 0) {
-    if (debug) hydra_report(stderr, "DEBUG: no response from server\n");
+    if (debug)
+      hydra_report(stderr, "DEBUG: no response from server\n");
     return -1;
   }
   return 0;
@@ -237,11 +239,11 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
   upd3variables = hydra_strrep(upd3variables, "^PASS^", cpass);
   if (strstr(userheader, "^USER^") == NULL && strstr(userheader, "^PASS^") == NULL) {
     strcpy(cuserheader, userheader);
-  } else { // we use the encoded version
+  } else {                      // we use the encoded version
     strncpy(cuserheader, hydra_strrep(userheader, "^USER^", clogin), sizeof(cuserheader) - 1);
-    cuserheader[ sizeof(cuserheader) - 1] = 0;
+    cuserheader[sizeof(cuserheader) - 1] = 0;
     strncpy(cuserheader, hydra_strrep(cuserheader, "^PASS^", cpass), sizeof(cuserheader) - 1);
-    cuserheader[ sizeof(cuserheader) - 1] = 0;
+    cuserheader[sizeof(cuserheader) - 1] = 0;
   }
 
   /* again: no snprintf to be portable. dont worry, buffer cant overflow */
@@ -254,7 +256,7 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
       if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
         return 1;
       }
-      i = analyze_server_response(s); // return value ignored
+      i = analyze_server_response(s);   // return value ignored
       if (strlen(cookie) > 0) {
         sprintf(header, "Cookie: %s\r\n", cookie);
       }
@@ -281,7 +283,8 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
       // proxy without authentication
       if (getcookie) {
         //doing a GET to get cookies
-        sprintf(buffer, "GET http://%s:%d%.600s HTTP/1.0\r\nHost: %s\r\nUser-Agent: Mozilla/5.0 (Hydra Proxy)\r\n%s%s\r\n", webtarget, webport, cookieurl, webtarget, header, cuserheader);
+        sprintf(buffer, "GET http://%s:%d%.600s HTTP/1.0\r\nHost: %s\r\nUser-Agent: Mozilla/5.0 (Hydra Proxy)\r\n%s%s\r\n", webtarget, webport, cookieurl, webtarget, header,
+                cuserheader);
         if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
           return 1;
         }
@@ -300,7 +303,8 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
           return 1;
         }
       } else {
-        sprintf(buffer, "GET http://%s:%d%.600s?%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: Mozilla/5.0 (Hydra)\r\n%s%s\r\n", webtarget, webport, url, upd3variables, webtarget, header, cuserheader);
+        sprintf(buffer, "GET http://%s:%d%.600s?%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: Mozilla/5.0 (Hydra)\r\n%s%s\r\n", webtarget, webport, url, upd3variables, webtarget,
+                header, cuserheader);
         if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
           return 1;
         }
@@ -347,7 +351,8 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
   }
   //if page was redirected, follow the location header
   redirected_cpt = MAX_REDIRECT;
-  if (debug) printf("[DEBUG] attempt result: found %d, redirect %d, location: %s\n", found, redirected_flag, redirected_url_buff);
+  if (debug)
+    printf("[DEBUG] attempt result: found %d, redirect %d, location: %s\n", found, redirected_flag, redirected_url_buff);
   while (found == 0 && redirected_flag && (redirected_url_buff[0] != 0) && (redirected_cpt > 0)) {
     //we have to split the location
     char *startloc, *endloc;
@@ -371,10 +376,10 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
       if (startloc != NULL) {
         startloc += strlen("://");
 
-        if ((endloc=strchr(startloc, '\r')) != NULL) {
+        if ((endloc = strchr(startloc, '\r')) != NULL) {
           startloc[endloc - startloc] = 0;
         }
-        if ((endloc=strchr(startloc, '\n')) != NULL) {
+        if ((endloc = strchr(startloc, '\n')) != NULL) {
           startloc[endloc - startloc] = 0;
         }
         strcpy(str, startloc);
@@ -383,9 +388,8 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
         if (endloc != NULL) {
           strncpy(str2, str, endloc - str);
           str2[endloc - str] = 0;
-        }
-        else
-            strncpy(str2, str, sizeof(str));
+        } else
+          strncpy(str2, str, sizeof(str));
 
         if (strlen(str) - strlen(str2) == 0) {
           strcpy(str3, "/");
@@ -400,18 +404,20 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
           //with the path from the first url given
           char *urlpath;
           char urlpath_extracted[2048];
+
           memset(urlpath_extracted, 0, sizeof(urlpath_extracted));
 
-          urlpath=strrchr(url, '/');
+          urlpath = strrchr(url, '/');
           if (urlpath != NULL) {
-            strncpy(urlpath_extracted, url, urlpath-url);
+            strncpy(urlpath_extracted, url, urlpath - url);
             sprintf(str3, "%.1000s/%.1000s", urlpath_extracted, redirected_url_buff);
           } else {
             sprintf(str3, "%.1000s/%.1000s", url, redirected_url_buff);
           }
         } else
           strncpy(str3, redirected_url_buff, sizeof(str3));
-       if (debug) hydra_report(stderr, "[DEBUG] host=%s redirect=%s origin=%s\n", str2, str3,url);
+        if (debug)
+          hydra_report(stderr, "[DEBUG] host=%s redirect=%s origin=%s\n", str2, str3, url);
       }
       if (str3[0] != '/') {
         j = strlen(str3);
@@ -502,17 +508,17 @@ void service_http_form(char *ip, int sp, unsigned char options, char *miscptr, F
   sprintf(bufferurl, "%.1000s", miscptr);
   url = bufferurl;
   ptr = url;
-  while (*ptr != 0 && ( *ptr != ':' || *(ptr - 1) == '\\' ))
+  while (*ptr != 0 && (*ptr != ':' || *(ptr - 1) == '\\'))
     ptr++;
   if (*ptr != 0)
     *ptr++ = 0;
   variables = ptr;
-  while (*ptr != 0 && ( *ptr != ':' || *(ptr - 1) == '\\' ))
+  while (*ptr != 0 && (*ptr != ':' || *(ptr - 1) == '\\'))
     ptr++;
   if (*ptr != 0)
     *ptr++ = 0;
   cond = ptr;
-  while (*ptr != 0 && ( *ptr != ':' || *(ptr - 1) == '\\' ))
+  while (*ptr != 0 && (*ptr != ':' || *(ptr - 1) == '\\'))
     ptr++;
   if (*ptr != 0)
     *ptr++ = 0;
@@ -535,14 +541,14 @@ void service_http_form(char *ip, int sp, unsigned char options, char *miscptr, F
       cond = ptr;
     }
   }
-  if (url == NULL || variables == NULL || cond == NULL /*|| optional1 == NULL*/)
+  if (url == NULL || variables == NULL || cond == NULL /*|| optional1 == NULL */ )
     hydra_child_exit(2);
 
 //printf("url: %s, var: %s, cond: %s, opt: %s\n", url, variables, cond, optional1);
 
   if (*cond == 0) {
     fprintf(stderr, "[ERROR] invalid number of parameters in module option\n");
-     hydra_child_exit(2);
+    hydra_child_exit(2);
   }
 
   sprintf(cookieurl, "%.1000s", url);
@@ -558,39 +564,39 @@ void service_http_form(char *ip, int sp, unsigned char options, char *miscptr, F
     //by default condition is a fail
     success_cond = 0;
   }
-  
-  while (/*(optional1 = strtok(NULL, ":")) != NULL*/ *optional1 != 0 ) {
-    switch(optional1[0]) {
-      case 'c': // fall through
-      case 'C':
-          ptr = optional1 + 2;
-          while (*ptr != 0 && ( *ptr != ':' || *(ptr - 1) == '\\' ))
-            ptr++;
-          if (*ptr != 0)
-            *ptr++ = 0;
-          sprintf(cookieurl, "%.1000s", hydra_strrep(optional1 + 2, "\\:", ":"));
-          optional1 = ptr;
-        break;
-      case 'h': // fall through
-      case 'H':
-          ptr = optional1 + 2;
-          while (*ptr != 0 && ( *ptr != ':' || *(ptr - 1) == '\\' ))
-            ptr++;
-          if (*ptr != 0)
-            *ptr++ = 0;
-          ptr2 = ptr;
-          while (*ptr2 != 0 && ( *ptr2 != ':' || *(ptr2 - 1) == '\\' ))
-            ptr2++;
-          if (*ptr2 != 0)
-            *ptr2++ = 0;
-          if (sizeof(userheader) - strlen(userheader) > 4) {
-            strncat(userheader, optional1 + 2, sizeof(userheader) - strlen(userheader) - 4);
-            strcat(userheader, ":");
-            strncat(userheader, hydra_strrep(ptr, "\\:", ":"), sizeof(userheader) - strlen(userheader) - 3);
-            strcat(userheader, "\r\n");
-          }
-        optional1 = ptr2;
-        break;
+
+  while ( /*(optional1 = strtok(NULL, ":")) != NULL */ *optional1 != 0) {
+    switch (optional1[0]) {
+    case 'c':                  // fall through
+    case 'C':
+      ptr = optional1 + 2;
+      while (*ptr != 0 && (*ptr != ':' || *(ptr - 1) == '\\'))
+        ptr++;
+      if (*ptr != 0)
+        *ptr++ = 0;
+      sprintf(cookieurl, "%.1000s", hydra_strrep(optional1 + 2, "\\:", ":"));
+      optional1 = ptr;
+      break;
+    case 'h':                  // fall through
+    case 'H':
+      ptr = optional1 + 2;
+      while (*ptr != 0 && (*ptr != ':' || *(ptr - 1) == '\\'))
+        ptr++;
+      if (*ptr != 0)
+        *ptr++ = 0;
+      ptr2 = ptr;
+      while (*ptr2 != 0 && (*ptr2 != ':' || *(ptr2 - 1) == '\\'))
+        ptr2++;
+      if (*ptr2 != 0)
+        *ptr2++ = 0;
+      if (sizeof(userheader) - strlen(userheader) > 4) {
+        strncat(userheader, optional1 + 2, sizeof(userheader) - strlen(userheader) - 4);
+        strcat(userheader, ":");
+        strncat(userheader, hydra_strrep(ptr, "\\:", ":"), sizeof(userheader) - strlen(userheader) - 3);
+        strcat(userheader, "\r\n");
+      }
+      optional1 = ptr2;
+      break;
       // no default
     }
   }
@@ -670,7 +676,7 @@ void service_http_post_form(char *ip, int sp, unsigned char options, char *miscp
   service_http_form(ip, sp, options, miscptr, fp, port, "POST");
 }
 
-int service_http_form_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_http_form_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

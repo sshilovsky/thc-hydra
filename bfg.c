@@ -1,3 +1,4 @@
+
 /* code original by Jan Dlabal <dlabaljan@gmail.com>, partially rewritten by vh */
 
 #include <stdio.h>
@@ -69,7 +70,7 @@ int bf_init(char *arg) {
 
   for (; tmp[i]; i++) {
     switch (tmp[i]) {
-     case 'a':
+    case 'a':
       crs_len += 26;
       if (BF_CHARSMAX - crs_len < 1) {
         free(bf_options.crs);
@@ -85,7 +86,7 @@ int bf_init(char *arg) {
       }
       break;
 
-     case 'A':
+    case 'A':
       crs_len += 26;
       if (BF_CHARSMAX - crs_len < 1) {
         free(bf_options.crs);
@@ -101,7 +102,7 @@ int bf_init(char *arg) {
       }
       break;
 
-     case '1':
+    case '1':
       crs_len += 10;
       if (BF_CHARSMAX - crs_len < 1) {
         free(bf_options.crs);
@@ -117,7 +118,7 @@ int bf_init(char *arg) {
       }
       break;
 
-     default:
+    default:
       if ((tmp[i] >= '2' && tmp[i] <= '9') || tmp[i] == '0') {
         if ((flags & BF_NUMS) > 0) {
           printf("[ERROR] character %c defined in -x although the whole number range was already defined by '1', ignored\n", tmp[i]);
@@ -125,7 +126,7 @@ int bf_init(char *arg) {
         }
         printf("[WARNING] adding character %c for -x, note that '1' will add all numbers from 0-9\n", tmp[i]);
       }
-      if (tolower((int)tmp[i]) >= 'b' && tolower((int)tmp[i]) <= 'z') {
+      if (tolower((int) tmp[i]) >= 'b' && tolower((int) tmp[i]) <= 'z') {
         if ((tmp[i] <= 'Z' && (flags & BF_UPPER) > 0) || (tmp[i] > 'Z' && (flags & BF_UPPER) > 0)) {
           printf("[ERROR] character %c defined in -x although the whole letter range was already defined by '%c', ignored\n", tmp[i], tmp[i] <= 'Z' ? 'A' : 'a');
           continue;
@@ -147,7 +148,7 @@ int bf_init(char *arg) {
 
   bf_options.crs_len = crs_len;
   bf_options.current = bf_options.from;
-  memset((char*)bf_options.state, 0, sizeof(bf_options.state));
+  memset((char *) bf_options.state, 0, sizeof(bf_options.state));
   if (debug)
     printf("[DEBUG] bfg INIT: from %d, to %d, len: %d, set: %s\n", bf_options.from, bf_options.to, bf_options.crs_len, bf_options.crs);
 
@@ -167,10 +168,10 @@ unsigned long int bf_get_pcount() {
 
 char *bf_next() {
   int i, pos = bf_options.current - 1;
-  
+
   if (bf_options.current > bf_options.to)
-    return NULL;  // we are done
-  
+    return NULL;                // we are done
+
   if ((bf_options.ptr = malloc(BF_CHARSMAX)) == NULL) {
     fprintf(stderr, "Error: Can not allocate memory for -x data!\n");
     return NULL;
@@ -191,12 +192,12 @@ char *bf_next() {
     bf_options.state[pos] = 0;
     pos--;
   }
-  
+
   if (pos < 0) {
     bf_options.current++;
-    memset((char*)bf_options.state, 0, sizeof(bf_options.state));
+    memset((char *) bf_options.state, 0, sizeof(bf_options.state));
   }
-  
+
   return bf_options.ptr;
 }
 

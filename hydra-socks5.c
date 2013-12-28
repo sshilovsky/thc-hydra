@@ -165,7 +165,7 @@ void service_socks5(char *ip, int sp, unsigned char options, char *miscptr, FILE
   }
 }
 
-int service_socks5_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_socks5_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

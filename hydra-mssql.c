@@ -83,9 +83,9 @@ int start_mssql(int s, char *ip, int port, unsigned char options, char *miscptr,
     return 1;
   if (hydra_send(s, (char *) p_lng, 71, 0) < 0)
     return 1;
- 
+
   memset(buffer, 0, sizeof(buffer));
-  ret=hydra_recv_nb(s, buffer, sizeof(buffer));
+  ret = hydra_recv_nb(s, buffer, sizeof(buffer));
 
   if (ret <= 0)
     return 3;
@@ -153,7 +153,7 @@ void service_mssql(char *ip, int sp, unsigned char options, char *miscptr, FILE 
   }
 }
 
-int service_mssql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_mssql_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

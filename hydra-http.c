@@ -2,7 +2,7 @@
 #include "sasl.h"
 
 extern char *HYDRA_EXIT;
-char *buf;
+char *buf = NULL;
 char *webtarget = NULL;
 char *slash = "/";
 int webport, freemischttp = 0;
@@ -19,6 +19,10 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
     login = empty;
   if (strlen(pass = hydra_get_next_password()) == 0)
     pass = empty;
+
+  // we must reset this if buf is NULL and we do MD5 digest
+  if (buf == NULL && http_auth_mechanism == AUTH_DIGESTMD5)
+    http_auth_mechanism = AUTH_BASIC;
 
   switch (http_auth_mechanism) {
   case AUTH_BASIC:
@@ -73,20 +77,24 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
       /* to be portable, no snprintf, buffer is big enough so it cant overflow */
       //send the first..
       if (use_proxy == 1 && proxy_authentication != NULL)
-        sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
+        sprintf(buffer,
+                "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
                 type, webtarget, webport, miscptr, webtarget, buf1, proxy_authentication, header);
       else {
         if (use_proxy == 1)
           sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
                   type, webtarget, webport, miscptr, webtarget, buf1, header);
         else
-          sprintf(buffer, "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n", type, miscptr, webtarget, buf1, header);
+          sprintf(buffer, "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n", type, miscptr, webtarget,
+                  buf1, header);
       }
 
       if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
         return 1;
 
       //receive challenge
+      if (buf != NULL)
+        free(buf);
       buf = hydra_receive_line(s);
       while (buf != NULL && (pos = hydra_strcasestr(buf, "WWW-Authenticate: NTLM ")) == NULL) {
         free(buf);
@@ -99,17 +107,18 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
       if (pos != NULL) {
         char *str;
 
-        pos+=23;
-        if ((str=strchr(pos, '\r')) != NULL) {
+        pos += 23;
+        if ((str = strchr(pos, '\r')) != NULL) {
           pos[str - pos] = 0;
         }
-        if ((str=strchr(pos, '\n')) != NULL) {
-          pos[str - pos] = 0; }
+        if ((str = strchr(pos, '\n')) != NULL) {
+          pos[str - pos] = 0;
+        }
       }
-
       //recover challenge
       from64tobits((char *) buf1, pos);
       free(buf);
+      buf = NULL;
 
       //Send response
       buildAuthResponse((tSmbNtlmAuthChallenge *) buf1, (tSmbNtlmAuthResponse *) buf2, 0, login, pass, NULL, NULL);
@@ -117,14 +126,16 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
       //create the auth response
       if (use_proxy == 1 && proxy_authentication != NULL)
-        sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
+        sprintf(buffer,
+                "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nProxy-Authorization: Basic %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
                 type, webtarget, webport, miscptr, webtarget, buf1, proxy_authentication, header);
       else {
         if (use_proxy == 1)
           sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n",
                   type, webtarget, webport, miscptr, webtarget, buf1, header);
         else
-          sprintf(buffer, "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n", type, miscptr, webtarget, buf1, header);
+          sprintf(buffer, "%s %s HTTP/1.0\r\nHost: %s\r\nAuthorization: NTLM %s\r\nUser-Agent: Mozilla/4.0 (Hydra)\r\nConnection: keep-alive\r\n%s\r\n", type, miscptr, webtarget,
+                  buf1, header);
       }
 
       if (debug)
@@ -137,6 +148,8 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
     return 1;
   }
 
+  if (buf != NULL)
+    free(buf);
   buf = hydra_receive_line(s);
   while (buf != NULL && strstr(buf, "HTTP/1.") == NULL) {
     free(buf);
@@ -158,6 +171,10 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if (ptr != NULL && (*ptr == '2' || *ptr == '3' || strncmp(ptr, "403", 3) == 0 || strncmp(ptr, "404", 3) == 0)) {
     hydra_report_found_host(port, ip, "www", fp);
     hydra_completed_pair_found();
+    if (buf != NULL) {
+      free(buf);
+      buf = NULL;
+    }
   } else {
     if (ptr != NULL && *ptr != '4')
       fprintf(stderr, "[WARNING] Unusual return code: %c for %s:%s\n", (char) *(index(buf, ' ') + 1), login, pass);
@@ -179,17 +196,18 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
 #endif
 
       if (find_auth) {
-        free(buf);
+//        free(buf);
+//        buf = NULL;
         return 1;
       }
     }
     hydra_completed_pair();
   }
-  free(buf);
+//  free(buf);
+//  buf = NULL;
   if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
     return 3;
   return 1;
-
 }
 
 void service_http(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port, char *type) {
@@ -285,7 +303,7 @@ void service_http_head(char *ip, int sp, unsigned char options, char *miscptr, F
   service_http(ip, sp, options, miscptr, fp, port, "HEAD");
 }
 
-int service_http_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_http_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.

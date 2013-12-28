@@ -1,3 +1,4 @@
+
 /*
    david: this module is heavily based on rdesktop v 1.7.0
 
@@ -52,7 +53,7 @@ BOOL g_bitmap_cache_persist_enable = False;
 BOOL g_bitmap_compression = True;
 BOOL g_desktop_save = True;
 int g_server_depth = -1;
-int os_version = 0; //2000
+int os_version = 0;             //2000
 
 uint32 g_rdp5_performanceflags = RDP5_NO_WALLPAPER | RDP5_NO_FULLWINDOWDRAG | RDP5_NO_MENUANIMATIONS;
 
@@ -644,34 +645,34 @@ static void iso_send_connection_request(char *username) {
 
 /* Send a single input event fast JL, this is required for win8 */
 void rdp_send_fast_input_kbd(uint32 time, uint16 flags, uint16 param1) {
-	STREAM s;
-	uint8 fast_flags = 0;
-	uint8  len=4;
+  STREAM s;
+  uint8 fast_flags = 0;
+  uint8 len = 4;
 
-	fast_flags |= (flags & RDP_KEYRELEASE) ? FASTPATH_INPUT_KBDFLAGS_RELEASE : 0;
-	s = tcp_init(len);
-	out_uint8(s, (1 << 2)); //one event 
-	out_uint8(s, len);
-	out_uint8(s, fast_flags|(FASTPATH_INPUT_EVENT_SCANCODE<<5));	
-	out_uint8(s, param1);
-	s_mark_end(s);
-	tcp_send(s);
+  fast_flags |= (flags & RDP_KEYRELEASE) ? FASTPATH_INPUT_KBDFLAGS_RELEASE : 0;
+  s = tcp_init(len);
+  out_uint8(s, (1 << 2));       //one event 
+  out_uint8(s, len);
+  out_uint8(s, fast_flags | (FASTPATH_INPUT_EVENT_SCANCODE << 5));
+  out_uint8(s, param1);
+  s_mark_end(s);
+  tcp_send(s);
 }
 
 /* Send a single input event fast JL, this is required for win8 */
-void rdp_send_fast_input_mouse(uint32 time, uint16 flags, uint16 param1,uint16 param2) {
-	STREAM s;
-	uint8 len=9;
+void rdp_send_fast_input_mouse(uint32 time, uint16 flags, uint16 param1, uint16 param2) {
+  STREAM s;
+  uint8 len = 9;
 
-	s = tcp_init(len);
-	out_uint8(s, (1 << 2)); //one event 
-	out_uint8(s, len);
-	out_uint8(s, (FASTPATH_INPUT_EVENT_MOUSE<<5));	
-	out_uint16(s, flags); 
-	out_uint16(s, param1); 
-	out_uint16(s, param2); 
-	s_mark_end(s);
-	tcp_send(s);
+  s = tcp_init(len);
+  out_uint8(s, (1 << 2));       //one event 
+  out_uint8(s, len);
+  out_uint8(s, (FASTPATH_INPUT_EVENT_MOUSE << 5));
+  out_uint16(s, flags);
+  out_uint16(s, param1);
+  out_uint16(s, param2);
+  s_mark_end(s);
+  tcp_send(s);
 }
 
 
@@ -786,7 +787,7 @@ BOOL iso_connect(char *server, char *username, BOOL reconnect) {
 /* Disconnect from the ISO layer */
 void iso_disconnect(void) {
   iso_send_msg(ISO_PDU_DR);
-  g_sock=hydra_disconnect(g_sock);
+  g_sock = hydra_disconnect(g_sock);
 }
 
 /* reset the state to support reconnecting */
@@ -1577,7 +1578,7 @@ void sec_process_mcs_data(STREAM s) {
 /* Receive secure transport packet */
 STREAM sec_recv(uint8 * rdpver) {
   uint32 sec_flags;
-  uint16 channel = 0	;
+  uint16 channel = 0;
   STREAM s;
 
   while ((s = mcs_recv(&channel, rdpver)) != NULL) {
@@ -1856,9 +1857,8 @@ static void process_memblt(STREAM s, MEMBLT_ORDER * os, uint32 present, BOOL del
   DEBUG(("MEMBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,id=%d,idx=%d)\n", os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx));
   //MEMBLT(op=0xcc,x=640,y=128,cx=64,cy=64,id=2,idx=117) => win8 failed
 
-  if ((os->opcode == 0xcc && os->x == 740 && os->y == 448 && os->cx == 60 && os->cy == 56 && os->cache_id == 2)||
-      (os->opcode == 0xcc && os->x == 640 && os->y == 128 && os->cx == 64 && os->cy == 64 && os->cache_id == 2 && os->cache_idx > 100))
-  {
+  if ((os->opcode == 0xcc && os->x == 740 && os->y == 448 && os->cx == 60 && os->cy == 56 && os->cache_id == 2) ||
+      (os->opcode == 0xcc && os->x == 640 && os->y == 128 && os->cx == 64 && os->cy == 64 && os->cache_id == 2 && os->cache_idx > 100)) {
     if (debug)
       hydra_report(stderr, "[DEBUG] Login failed from process_memblt\n");
     login_result = LOGIN_FAIL;
@@ -1866,7 +1866,7 @@ static void process_memblt(STREAM s, MEMBLT_ORDER * os, uint32 present, BOOL del
 }
 
 /* Process a text order */
-static void process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta) {
+static void process_text2(STREAM s, TEXT2_ORDER * os, uint32 present, BOOL delta) {
   int i;
 
   if (present & 0x000001)
@@ -1945,14 +1945,14 @@ static void process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta)
   //on win2k, error can be fe 00 00 or fe 02 00
   if (((os->text[0] == 254) && (os->text[2] == 0)) || (!memcmp(os->text, LOGON_MESSAGE_FAILED_XP, 18))) {
     if (debug)
-      hydra_report(stderr,"[DEBUG] login failed from process_text2\n");
+      hydra_report(stderr, "[DEBUG] login failed from process_text2\n");
     login_result = LOGIN_FAIL;
   } else {
     //if it's not an well known error and if it's not just traffic from win 2000 server
 
     if ((os_version == 2000) && (os->length > 50)) {
       if (debug)
-        hydra_report(stderr,"[DEBUG] login success from process_text2\n");
+        hydra_report(stderr, "[DEBUG] login success from process_text2\n");
       login_result = LOGIN_SUCC;
     }
   }
@@ -1975,35 +1975,35 @@ static void process_secondary_order(STREAM s) {
   next_order = s->p + (sint16) length + 7;
 
   /*
-	switch (type)
-	{
-		case RDP_ORDER_RAW_BMPCACHE:
-			break;
+     switch (type)
+     {
+     case RDP_ORDER_RAW_BMPCACHE:
+     break;
 
-		case RDP_ORDER_COLCACHE:
-			break;
+     case RDP_ORDER_COLCACHE:
+     break;
 
-		case RDP_ORDER_BMPCACHE:
-			break;
+     case RDP_ORDER_BMPCACHE:
+     break;
 
-		case RDP_ORDER_FONTCACHE:
-			process_fontcache(s);
-			break;
+     case RDP_ORDER_FONTCACHE:
+     process_fontcache(s);
+     break;
 
-		case RDP_ORDER_RAW_BMPCACHE2:
-			break;
+     case RDP_ORDER_RAW_BMPCACHE2:
+     break;
 
-		case RDP_ORDER_BMPCACHE2:
-			break;
+     case RDP_ORDER_BMPCACHE2:
+     break;
 
-		case RDP_ORDER_BRUSHCACHE:
-			process_brushcache(s, flags);
-			break;
+     case RDP_ORDER_BRUSHCACHE:
+     process_brushcache(s, flags);
+     break;
 
-		default:
-			unimpl("secondary order %d\n", type);
-	}
-  */
+     default:
+     unimpl("secondary order %d\n", type);
+     }
+   */
   s->p = next_order;
 }
 
@@ -2087,7 +2087,7 @@ void process_orders(STREAM s, uint16 num_orders) {
       case RDP_ORDER_TEXT2:
         process_text2(s, &os->text2, present, delta);
         break;
-      
+
       default:
         if (debug)
           printf("[DEBUG] unknown order_type: %d\n", os->order_type);
@@ -2435,7 +2435,7 @@ int start_rdp(int s, char *ip, int port, unsigned char options, char *miscptr, F
   if (login_result == LOGIN_SUCC) {
     hydra_report_found_host(port, ip, "rdp", fp);
     hydra_completed_pair_found();
-  } else {    
+  } else {
     hydra_completed_pair();
   }
 
@@ -2463,8 +2463,8 @@ void service_rdp(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
       rdesktop_reset_state();
       g_sock = hydra_connect_tcp(ip, myport);
       if (g_sock < 0) {
-	hydra_report(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
-	hydra_child_exit(1);
+        hydra_report(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        hydra_child_exit(1);
       }
       next_run = start_rdp(g_sock, ip, port, options, miscptr, fp);
       break;
@@ -2708,23 +2708,23 @@ void rdp_send_input(uint32 time, uint16 message_type, uint16 device_flags, uint1
   STREAM s;
 
   switch (message_type) {
-    case RDP_INPUT_MOUSE:
-      rdp_send_fast_input_mouse(time,device_flags, param1,param2);
-      break;
-    case RDP_INPUT_SCANCODE:
-      rdp_send_fast_input_kbd(time,device_flags, param1);
-      break;
-    default:
-      s = rdp_init_data(16);
-      out_uint16_le(s, 1);          /* number of events */
-      out_uint16(s, 0);             /* pad */
-      out_uint32_le(s, time);
-      out_uint16_le(s, message_type);
-      out_uint16_le(s, device_flags);
-      out_uint16_le(s, param1);
-      out_uint16_le(s, param2);
-      s_mark_end(s);
-      rdp_send_data(s, RDP_DATA_PDU_INPUT);
+  case RDP_INPUT_MOUSE:
+    rdp_send_fast_input_mouse(time, device_flags, param1, param2);
+    break;
+  case RDP_INPUT_SCANCODE:
+    rdp_send_fast_input_kbd(time, device_flags, param1);
+    break;
+  default:
+    s = rdp_init_data(16);
+    out_uint16_le(s, 1);        /* number of events */
+    out_uint16(s, 0);           /* pad */
+    out_uint32_le(s, time);
+    out_uint16_le(s, message_type);
+    out_uint16_le(s, device_flags);
+    out_uint16_le(s, param1);
+    out_uint16_le(s, param2);
+    s_mark_end(s);
+    rdp_send_data(s, RDP_DATA_PDU_INPUT);
   }
 }
 
@@ -2800,11 +2800,11 @@ static void rdp_out_order_caps(STREAM s) {
   order_caps[11] = (g_desktop_save ? 1 : 0);    /* desksave */
   order_caps[13] = 1;           /* memblt */
   order_caps[14] = 1;           /* triblt */
-  order_caps[20] = 1;  /* polygon */
-  order_caps[21] = 1;  /* polygon2 */
+  order_caps[20] = 1;           /* polygon */
+  order_caps[21] = 1;           /* polygon2 */
   order_caps[22] = 1;           /* polyline */
-  order_caps[25] = 1;  /* ellipse */
-  order_caps[26] = 1;  /* ellipse2 */
+  order_caps[25] = 1;           /* ellipse */
+  order_caps[26] = 1;           /* ellipse2 */
   order_caps[27] = 1;           /* text2 */
   out_uint16_le(s, RDP_CAPSET_ORDER);
   out_uint16_le(s, RDP_CAPLEN_ORDER);
@@ -3083,7 +3083,7 @@ static void process_demand_active(STREAM s) {
   rdp_recv(&type);              /* RDP_PDU_SYNCHRONIZE */
   rdp_recv(&type);              /* RDP_CTL_COOPERATE */
   rdp_recv(&type);              /* RDP_CTL_GRANT_CONTROL */
-  rdp_send_input(0, 0, 0, 0, 0); /* RDP_INPUT_SYNCHRONIZE */
+  rdp_send_input(0, 0, 0, 0, 0);        /* RDP_INPUT_SYNCHRONIZE */
   // here? XXX TODO BUGFIX
 
   if (g_use_rdp5) {
@@ -3195,7 +3195,7 @@ static BOOL process_data_pdu(STREAM s, uint32 * ext_disc_reason) {
 }
 #endif
 
-int service_rdp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE *fp, int port) {
+int service_rdp_init(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   // called before the childrens are forked off, so this is the function
   // which should be filled if initial connections and service setup has to be
   // performed once only.
