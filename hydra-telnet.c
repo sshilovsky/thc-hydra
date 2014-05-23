@@ -132,7 +132,7 @@ void service_telnet(char *ip, int sp, unsigned char options, char *miscptr, FILE
         hydra_child_exit(1);
       }
       if ((buf = hydra_receive_line(sock)) == NULL) {   /* check the first line */
-        hydra_report(stderr, "[ERROR] Not a TELNET protocol or service shutdown: %s\n", buf);
+        hydra_report(stderr, "[ERROR] Not a TELNET protocol or service shutdown\n");
         hydra_child_exit(2);
 //        hydra_child_exit(2);
       }
@@ -140,7 +140,7 @@ void service_telnet(char *ip, int sp, unsigned char options, char *miscptr, FILE
         hydra_send(sock, "\r\n", 2, 0);
         free(buf);
         if ((buf = hydra_receive_line(sock)) == NULL) {
-          hydra_report(stderr, "[ERROR] Not a TELNET protocol or service shutdown: %s\n", buf);
+          hydra_report(stderr, "[ERROR] Not a TELNET protocol or service shutdown\n");
           hydra_child_exit(2);
         }
       }

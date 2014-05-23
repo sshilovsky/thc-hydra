@@ -1,5 +1,5 @@
 #
-# Makefile for Hydra - (c) 2001-2013 by van Hauser / THC <vh@thc.org>
+# Makefile for Hydra - (c) 2001-2014 by van Hauser / THC <vh@thc.org>
 #
 OPTS=-I. -O3
 # -Wall -g -pedantic
@@ -15,7 +15,7 @@ SRC = hydra-vnc.c hydra-pcnfs.c hydra-rexec.c hydra-nntp.c hydra-socks5.c \
       hydra-oracle-listener.c hydra-svn.c hydra-pcanywhere.c hydra-sip.c \
       hydra-oracle.c hydra-vmauthd.c hydra-asterisk.c hydra-firebird.c hydra-afp.c hydra-ncp.c \
       hydra-oracle-sid.c hydra-http-proxy.c hydra-http-form.c hydra-irc.c \
-      hydra-rdp.c hydra-s7-300.c \
+      hydra-rdp.c hydra-s7-300.c hydra-redis.c \
       crc32.c d3des.c bfg.c ntlm.c sasl.c hmacmd5.c hydra-mod.c 
 OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
       hydra-telnet.o hydra-cisco.o hydra-http.o hydra-ftp.o hydra-imap.o \
@@ -25,7 +25,7 @@ OBJ = hydra-vnc.o hydra-pcnfs.o hydra-rexec.o hydra-nntp.o hydra-socks5.o \
       hydra-sshkey.o hydra-teamspeak.o hydra-postgres.o hydra-rsh.o hydra-rlogin.o \
       hydra-oracle-listener.o hydra-svn.o hydra-pcanywhere.o hydra-sip.o \
       hydra-oracle-sid.o hydra-oracle.o hydra-vmauthd.o hydra-asterisk.o hydra-firebird.o hydra-afp.o hydra-ncp.o \
-      hydra-http-proxy.o hydra-http-form.o hydra-irc.o \
+      hydra-http-proxy.o hydra-http-form.o hydra-irc.o hydra-redis.o \
       hydra-rdp.o hydra-s7-300.c \
       crc32.o d3des.o bfg.o ntlm.o sasl.o hmacmd5.o hydra-mod.o
 BINS = hydra pw-inspector
@@ -38,7 +38,7 @@ all:	pw-inspector hydra $(XHYDRA_SUPPORT)
 	@echo Now type "make install"
 
 hydra:	hydra.c $(OBJ)
-	$(CC) $(OPTS) $(LIBS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o hydra $(HYDRA_LOGO) hydra.c $(OBJ) $(LIBS) $(XLIBS) $(XLIBPATHS) $(XIPATHS) $(XDEFINES)
+	$(CC) $(OPTS) $(SEC) $(LIBS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o hydra $(HYDRA_LOGO) hydra.c $(OBJ) $(LIBS) $(XLIBS) $(XLIBPATHS) $(XIPATHS) $(XDEFINES)
 	@echo
 	@echo If men could get pregnant, abortion would be a sacrament
 	@echo
@@ -47,10 +47,10 @@ xhydra:
 	-cd hydra-gtk && sh ./make_xhydra.sh
 
 pw-inspector: pw-inspector.c
-	-$(CC) $(OPTS) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o pw-inspector $(PWI_LOGO) pw-inspector.c
+	-$(CC) $(OPTS) $(SEC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o pw-inspector $(PWI_LOGO) pw-inspector.c
 
 .c.o:	
-	$(CC) $(OPTS) $(CFLAGS) $(CPPFLAGS) -c $< $(XDEFINES) $(XIPATHS)
+	$(CC) $(OPTS) $(SEC) $(CFLAGS) $(CPPFLAGS) -c $< $(XDEFINES) $(XIPATHS)
 
 strip:	all
 	strip $(BINS)

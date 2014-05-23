@@ -116,6 +116,8 @@
 #define PORT_ASTERISK_SSL  5038 
 #define PORT_S7_300      102
 #define PORT_S7_300_SSL  102
+#define PORT_REDIS      6379
+#define PORT_REDIS_SSL   6379
 
 #define False 0
 #define True  1

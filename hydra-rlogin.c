@@ -38,16 +38,21 @@ int start_rlogin(int s, char *ip, int port, unsigned char options, char *miscptr
   if (hydra_send(s, buffer2, 4 + strlen(login) + strlen(login) + strlen(TERM), 0) < 0) {
     return 4;
   }
-  ret = hydra_recv(s, buffer, sizeof(buffer));
+  buffer[0] = 0;
+  if ((ret = hydra_recv(s, buffer, sizeof(buffer) - 1)) >= 0)
+    buffer[ret] = 0;
   /* 0x00 is sent but hydra_recv transformed it */
-  if (strlen(buffer) == 0)
-    ret = hydra_recv(s, buffer, sizeof(buffer));
+  if (strlen(buffer) == 0) {
+    ret = hydra_recv(s, buffer, sizeof(buffer) - 1);
+  }
+  if (ret >= 0)
+    buffer[ret] = 0;
 
   if (ret > 0 && (strstr(buffer, "rlogind:") != NULL))
     return 1;
 
   if (ret > 0 && (strstr(buffer, "ssword") != NULL)) {
-    if (strlen(pass = hydra_get_next_password()) == 0)
+    if (strlen((pass = hydra_get_next_password())) == 0)
       pass = empty;
     sprintf(buffer2, "%s\r", pass);
     if (hydra_send(s, buffer2, 1 + strlen(pass), 0) < 0) {
@@ -56,7 +61,9 @@ int start_rlogin(int s, char *ip, int port, unsigned char options, char *miscptr
     memset(buffer, 0, sizeof(buffer));
     ret = hydra_recv(s, buffer, sizeof(buffer));
     if (strcmp(buffer, "\r\n"))
-      ret = hydra_recv(s, buffer, sizeof(buffer));
+      ret = hydra_recv(s, buffer, sizeof(buffer) - 1);
+      if (ret >= 0)
+        buffer[ret] = 0;
   }
   /* Authentication failure */
 

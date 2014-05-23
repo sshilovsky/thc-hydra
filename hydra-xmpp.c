@@ -4,7 +4,6 @@
 /* david: ref http://xmpp.org/rfcs/rfc3920.html */
 
 extern char *HYDRA_EXIT;
-char *buf;
 static char *domain = NULL;
 
 int xmpp_auth_mechanism = AUTH_ERROR;
@@ -22,6 +21,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   char *CHALLENGE_END_STR = "</challenge>";
   char *RESPONSE_STR = "<response xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>";
   char *RESPONSE_END_STR = "</response>";
+  char *fooptr, *buf;
 
   if (strlen(login = hydra_get_next_login()) == 0)
     login = empty;
@@ -48,9 +48,10 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
   hydra_send(s, buffer, strlen(buffer), 0);
   usleep(300000);
-  buf = hydra_receive_line(s);
+  if ((buf = hydra_receive_line(s)) == NULL)
+    return 3;
 
-  if (verbose)
+  if (debug)
     hydra_report(stderr, "DEBUG S: %s\n", buf);
 
   if ((strstr(buf, CHALLENGE_STR) != NULL) || (strstr(buf, CHALLENGE_STR2) != NULL)) {
@@ -71,7 +72,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       buffer2[chglen] = '\0';
       memset(buffer, 0, sizeof(buffer));
       from64tobits((char *) buffer, buffer2);
-      if (verbose)
+      if (debug)
         hydra_report(stderr, "DEBUG S: %s\n", buffer);
     }
 
@@ -83,7 +84,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
           hydra_tobase64((unsigned char *) buffer2, strlen(buffer2), sizeof(buffer2));
           sprintf(buffer, "%s%.250s%s", RESPONSE_STR, buffer2, RESPONSE_END_STR);
-          if (verbose)
+          if (debug)
             hydra_report(stderr, "DEBUG C: %s\n", buffer);
           if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
             free(buf);
@@ -95,7 +96,6 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           /* server now would ask for the password */
           if ((strstr(buf, CHALLENGE_STR) != NULL) || (strstr(buf, CHALLENGE_STR2) != NULL)) {
             char *ptr = strstr(buf, CHALLENGE_STR);
-
             if (!ptr)
               ptr = strstr(buf, CHALLENGE_STR2);
             char *ptr_end = strstr(ptr, CHALLENGE_END_STR);
@@ -117,7 +117,6 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
               free(buf);
               return 1;
             }
-            free(buf);
           }
         }
       }
@@ -127,7 +126,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
         memset(buffer2, 0, sizeof(buffer));
         sasl_plain(buffer2, login, pass);
         sprintf(buffer, "%s%.250s%s", RESPONSE_STR, buffer2, RESPONSE_END_STR);
-        if (verbose)
+        if (debug)
           hydra_report(stderr, "DEBUG C: %s\n", buffer);
 
       }
@@ -141,11 +140,12 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
         rc = sasl_saslprep(login, SASL_ALLOW_UNASSIGNED, &preplogin);
         if (rc) {
+          free(buf);
           return 3;
         }
 
         sprintf(buffer, "%.200s %.250s", preplogin, buffer2);
-        if (verbose)
+        if (debug)
           hydra_report(stderr, "DEBUG C: %s\n", buffer);
         hydra_tobase64((unsigned char *) buffer, strlen(buffer), sizeof(buffer));
         sprintf(buffer2, "%s%.250s%s", RESPONSE_STR, buffer, RESPONSE_END_STR);
@@ -156,10 +156,13 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       break;
     case AUTH_DIGESTMD5:{
         memset(buffer2, 0, sizeof(buffer2));
-        sasl_digest_md5(buffer2, login, pass, buffer, domain, "xmpp", NULL, 0, NULL);
-        if (buffer2 == NULL)
+        fooptr = buffer2;
+        sasl_digest_md5(fooptr, login, pass, buffer, domain, "xmpp", NULL, 0, NULL);
+        if (fooptr == NULL) {
+          free(buf);
           return 3;
-        if (verbose)
+        }
+        if (debug)
           hydra_report(stderr, "DEBUG C: %s\n", buffer2);
         hydra_tobase64((unsigned char *) buffer2, strlen(buffer2), sizeof(buffer2));
         snprintf(buffer, sizeof(buffer), "%s%s%s", RESPONSE_STR, buffer2, RESPONSE_END_STR);
@@ -172,6 +175,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
         int rc = sasl_saslprep(login, SASL_ALLOW_UNASSIGNED, &preplogin);
 
         if (rc) {
+          free(buf);
           return 3;
         }
 
@@ -181,6 +185,7 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
         hydra_tobase64((unsigned char *) buffer2, strlen(buffer2), sizeof(buffer2));
         snprintf(buffer, sizeof(buffer), "%s%s%s", RESPONSE_STR, buffer2, RESPONSE_END_STR);
 
+        free(buf);
         if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
           return 1;
         }
@@ -213,8 +218,9 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           serverfirstmessage[sizeof(serverfirstmessage) - 1] = '\0';
 
           memset(buffer2, 0, sizeof(buffer2));
-          sasl_scram_sha1(buffer2, pass, clientfirstmessagebare, serverfirstmessage);
-          if (buffer2 == NULL) {
+          fooptr = buffer2;
+          sasl_scram_sha1(fooptr, pass, clientfirstmessagebare, serverfirstmessage);
+          if (fooptr == NULL) {
             hydra_report(stderr, "[ERROR] Can't compute client response\n");
             free(buf);
             return 1;
@@ -227,12 +233,13 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
           free(buf);
           return 1;
         }
-        free(buf);
       }
       break;
 #endif
+      ptr = 0;
     }
 
+    free(buf);
     if (hydra_send(s, buffer, strlen(buffer), 0) < 0) {
       return 1;
     }
@@ -266,12 +273,13 @@ int start_xmpp(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if (strstr(buf, "<failure")) {
     hydra_report(stderr, "[ERROR] Protocol failure, try using another auth method. %s\n", strstr(buf, "<failure"));
   }
+  free(buf);
   return 3;
 }
 
 void service_xmpp(char *target, char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1, sock = -1, tls = 0;
-  char buffer[500];
+  char buffer[500], *buf = NULL;
   int myport = PORT_XMPP, mysslport = PORT_XMPP_SSL, disable_tls = 0;
   char *enddomain = NULL;
 

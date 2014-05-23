@@ -38,10 +38,10 @@ char mysqlsalt[9];
 
 /* modified hydra_receive_line, I've striped code which changed every 0x00 to 0x20 */
 char *hydra_mysql_receive_line(int socket) {
-  char buf[300], *buff;
-  int i = 0, j = 0;
+  char buf[300], *buff, *buff2;
+  int i = 0, j = 0, buff_size = 300;
 
-  buff = malloc(sizeof(buf));
+  buff = malloc(buff_size);
   if (buff == NULL)
     return NULL;
   memset(buff, 0, sizeof(buf));
@@ -55,7 +55,7 @@ char *hydra_mysql_receive_line(int socket) {
   }
   if (i <= 0) {
     if (debug)
-      hydra_report_debug(stderr, "DEBUG_RECV_BEGIN|%s|END\n", buff);
+      hydra_report_debug(stderr, "DEBUG_RECV_BEGIN||END\n");
     free(buff);
     return NULL;
   }
@@ -63,11 +63,17 @@ char *hydra_mysql_receive_line(int socket) {
   j = 1;
   while (hydra_data_ready(socket) > 0 && j > 0) {
     j = internal__hydra_recv(socket, buf, sizeof(buf));
-    buff = realloc(buff, i + j);
-    if (buff == NULL)
-      return NULL;
-    memcpy(buff + i, &buf, j);
-    i = i + j;
+    if (j > 0) {
+      if (i + j > buff_size || (buff2 = realloc(buff, i + j)) == NULL) {
+        free(buff);
+        return NULL;
+      } else {
+        buff = buff2;
+        buff_size = i + j;
+      }
+      memcpy(buff + i, &buf, j);
+      i += j;
+    }
   }
 
   if (debug)
@@ -175,12 +181,13 @@ int start_mysql(int sock, char *ip, int port, unsigned char options, char *miscp
   pass = hydra_get_next_password();
 
   if (miscptr)
-    strncpy(database, miscptr, sizeof(database));
+    strncpy(database, miscptr, sizeof(database) - 1);
   else {
-    strncpy(database, DEFAULT_DB, sizeof(database));
+    strncpy(database, DEFAULT_DB, sizeof(database) - 1);
     if (verbose)
       hydra_report(stderr, "[VERBOSE] using default db 'mysql'\n");
   }
+  database[sizeof(database) - 1] = 0;
 
   /* read server greeting */
   res = hydra_mysql_init(sock);
@@ -318,7 +325,7 @@ void service_mysql(char *ip, int sp, unsigned char options, char *miscptr, FILE 
         port = myport;
       }
       if (sock < 0) {
-        fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
         hydra_child_exit(1);
       }
       next_run = 2;
