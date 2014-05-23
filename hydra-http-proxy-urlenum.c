@@ -80,6 +80,7 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
         hydra_report(stderr, "C:%s\n", buffer);
       if (hydra_send(s, buffer, strlen(buffer), 0) < 0)
         return 1;
+      free(buf);
       buf = hydra_receive_line(s);
       while (buf != NULL && strstr(buf, "HTTP/1.") == NULL) {
         free(buf);
@@ -116,6 +117,7 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
           return 1;
 
         //receive challenge
+        free(buf);
         buf = hydra_receive_line(s);
         while (buf != NULL && (pos = hydra_strcasestr(buf, "Proxy-Authenticate: NTLM ")) == NULL) {
           free(buf);
@@ -134,7 +136,8 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
         }
         //recover challenge
         if (buf != NULL) {
-          from64tobits((char *) buf1, pos);
+          if (strlen(buf) >= 4)
+            from64tobits((char *) buf1, pos);
           free(buf);
         }
         //Send response
@@ -165,8 +168,9 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
           strncpy(buffer, pbuffer + strlen("Proxy-Authenticate: Digest "), sizeof(buffer));
           buffer[sizeof(buffer) - 1] = '\0';
 
-          sasl_digest_md5(buffer2, login, pass, buffer, miscptr, "proxy", host, 0, header);
-          if (buffer2 == NULL)
+          pbuffer = buffer2;
+          sasl_digest_md5(pbuffer, login, pass, buffer, miscptr, "proxy", host, 0, header);
+          if (pbuffer == NULL)
             return 3;
 
           if (debug)
@@ -174,6 +178,7 @@ int start_http_proxy_urlenum(int s, char *ip, int port, unsigned char options, c
           if (hydra_send(s, buffer2, strlen(buffer2), 0) < 0)
             return 1;
 
+          free(buf);
           buf = hydra_receive_line(s);
           while (buf != NULL && strstr(buf, "HTTP/1.") == NULL) {
             free(buf);
@@ -251,7 +256,7 @@ void service_http_proxy_urlenum(char *ip, int sp, unsigned char options, char *m
           port = mysslport;
         }
         if (sock < 0) {
-          fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+          if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
           hydra_child_exit(1);
         }
         next_run = 2;

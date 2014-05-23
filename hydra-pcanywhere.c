@@ -62,7 +62,8 @@ void pca_encrypt(char *cleartxt) {
   char passwd[128];
   int i;
 
-  strcpy(passwd, cleartxt);
+  strncpy(passwd, cleartxt, sizeof(passwd) - 1);
+  passwd[sizeof(passwd) - 1] = 0;
   if (strlen(cleartxt) > 0) {
     passwd[0] = (passwd[0] ^ 0xab);
     for (i = 1; i < strlen(passwd); i++)
@@ -139,7 +140,7 @@ int start_pcanywhere(int s, char *ip, int port, unsigned char options, char *mis
       return 1;
     }
 
-    ret = hydra_recv(s, buffer, sizeof(buffer));
+    ret = hydra_recv(s, buffer, sizeof(buffer) - 1);
     if (ret == -1) {
       return 1;
     }
@@ -147,17 +148,21 @@ int start_pcanywhere(int s, char *ip, int port, unsigned char options, char *mis
     if (i == 3) {
       if (ret == 3) {
         /*one more to get the login prompt */
-        ret = hydra_recv(s, buffer, sizeof(buffer));
+        ret = hydra_recv(s, buffer, sizeof(buffer) - 1);
       }
     }
+
+    if (ret >= 0)
+      buffer[ret] = 0;
 
     if (i == 0 || i == 3)
       clean_buffer(buffer, ret);
 
-    /*show_buffer(buffer,ret); */
+    if (debug) show_buffer(buffer, ret);
 
     if (i == 2) {
       clean_buffer(buffer, ret);
+      buffer[sizeof(buffer) - 1] = 0;
       if (strstr(buffer, server[i + 2]) != NULL) {
         fprintf(stderr, "[ERROR] PC Anywhere host denying connection because you have requested a lower encrypt level\n");
         return 3;
@@ -175,10 +180,11 @@ int start_pcanywhere(int s, char *ip, int port, unsigned char options, char *mis
   if (send_cstring(s, clogin) < 0) {
     return 1;
   }
-  ret = hydra_recv(s, buffer, sizeof(buffer));
-  if (ret == -1) {
+  ret = hydra_recv(s, buffer, sizeof(buffer) - 1);
+  if (ret < 0) {
     return 1;
   }
+  buffer[ret] = 0;
   clean_buffer(buffer, ret);
   /*show_buffer(buffer,ret); */
   if (strstr(buffer, "Enter password:") == NULL) {
@@ -191,9 +197,10 @@ int start_pcanywhere(int s, char *ip, int port, unsigned char options, char *mis
   }
 
   ret = hydra_recv(s, buffer, sizeof(buffer));
-  if (ret == -1) {
+  if (ret < 0)
     return 1;
-  }
+  else
+    buffer[ret] = 0;
 
   clean_buffer(buffer, ret);
   /*show_buffer(buffer,ret); */
@@ -244,7 +251,7 @@ void service_pcanywhere(char *ip, int sp, unsigned char options, char *miscptr, 
         port = mysslport;
       }
       if (sock < 0) {
-        fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
         hydra_child_exit(1);
       }
 

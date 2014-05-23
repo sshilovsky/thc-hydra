@@ -172,9 +172,7 @@ void usekey(from)
   return;
 }
 
-void des(inblock, outblock)
-     unsigned char *inblock, *outblock;
-{
+void des(unsigned char *inblock, unsigned char *outblock) {
   unsigned long work[2];
 
   scrunch(inblock, work);

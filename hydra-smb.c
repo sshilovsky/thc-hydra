@@ -9,6 +9,9 @@ void dummy_smb() {
 #include "hmacmd5.h"
 #include "sasl.h"
 
+// FIXME XXX BUG: several malloc()s without return code checking
+
+
 /*
 
 http://technet.microsoft.com/en-us/library/cc960646.aspx
@@ -110,6 +113,46 @@ int hashFlag, accntFlag, protoFlag;
 int smb_auth_mechanism = AUTH_NTLM;
 int security_mode = ENCRYPTED;
 
+static size_t UTF8_UTF16LE(unsigned char *in, int insize, unsigned char *out, int outsize)
+{
+  int i=0,j=0;
+  unsigned long int ch;
+  if (debug) {
+     hydra_report(stderr, "[DEBUG] UTF8_UTF16LE in:\n");
+     hydra_dump_asciihex(in, insize);
+  }
+  for (i = 0; i <  insize; i++) {
+      if (in[i] < 128) { // one byte
+          out[j] = in[i];
+         out[j+1] = 0;
+          j=j+2;
+        } else if ((in[i] >= 0xc0) && (in[i] <= 0xdf)) { // Two bytes
+          out[j+1] = 0x07 & (in[i] >> 2);
+          out[j] = (0xc0 & (in[i] << 6)) | (0x3f & in[i+1]);
+         j=j+2;
+         i=i+1;
+       } else if ((in[i] >= 0xe0) && (in[i] <= 0xef)) { // Three bytes
+         out[j] = (0xc0 & (in[i+1] << 6)) | (0x3f & in[i+2]);
+         out[j+1] = (0xf0 & (in[i] << 4)) | (0x0f & (in[i+1] >> 2));
+         j=j+2;
+         i=i+2;
+        } else if ((in[i] >= 0xf0) && (in[i] <= 0xf7)) { // Four bytes
+          ch = ((in[i] & 0x07) << 18) + ((0x3f & in[i+1]) << 12) + ((0x3f & in[i+2]) << 6) + (0x3f & in[i+3])- 0x10000;
+          out[j] = (ch >> 10) & 0xff;
+          out[j+1] = 0xd8 | ((ch >> 18) & 0xff);
+          out[j+2] = ch & 0xff;
+          out[j+3] = 0xdc | ((ch >> 8) & 0x3 );
+          j=j+4;
+          i=i+3;
+      }
+      if ( j-2 > outsize) break;
+  }
+  if (debug) {
+     hydra_report(stderr, "[DEBUG] UTF8_UTF16LE out:\n");
+     hydra_dump_asciihex(out,j);
+  }
+  return j;
+}
 
 static unsigned char Get7Bits(unsigned char *input, int startBit) {
   register unsigned int word;
@@ -318,12 +361,12 @@ int MakeNTLM(unsigned char *ntlmhash, unsigned char *pass) {
     }
 
     /* Initialize the Unicode version of the secret (== password). */
-    /* This implicitly supports 8-bit ISO8859/1 characters. */
-    bzero(unicodePassword, sizeof(unicodePassword));
-    for (i = 0; i < strlen((char *) pass); i++)
-      unicodePassword[i * 2] = (unsigned char) pass[i];
+    /* This implicitly supports most UTF8 characters. */
 
-    mdlen = strlen((char *) pass) * 2;  /* length in bytes */
+    j = UTF8_UTF16LE(pass, strlen((char *) pass), unicodePassword, sizeof(unicodePassword));
+
+    mdlen = j;  /* length in bytes */
+
     MD4_Init(&md4Context);
     MD4_Update(&md4Context, unicodePassword, mdlen);
     MD4_Final(hash, &md4Context);       /* Tell MD4 we're done */
@@ -413,7 +456,8 @@ int HashLMv2(unsigned char **LMv2hash, unsigned char *szLogin, unsigned char *sz
   hmac_md5_final(lmv2_response, &ctx);
 
   /* --- 24-byte LMv2 Response Complete --- */
-  *LMv2hash = malloc(24);
+  if ((*LMv2hash = malloc(24)) == NULL)
+    return -1;
   memset(*LMv2hash, 0, 24);
   memcpy(*LMv2hash, lmv2_response, 16);
   memcpy(*LMv2hash + 16, client_challenge, 8);
@@ -590,7 +634,8 @@ int HashNTLMv2(unsigned char **NTLMv2hash, int *iByteCount, unsigned char *szLog
   hmac_md5_final(ntlmv2_response, &ctx);
 
   *iByteCount = 48 + iTargetLen + 4;
-  *NTLMv2hash = malloc(*iByteCount);
+  if ((*NTLMv2hash = malloc(*iByteCount)) == NULL)
+    return -1;
   memset(*NTLMv2hash, 0, *iByteCount);
   memcpy(*NTLMv2hash, ntlmv2_response, *iByteCount);
 
@@ -638,6 +683,7 @@ int NBSSessionRequest(int s) {
   unsigned char rqbuf[7] = { 0x81, 0x00, 0x00, 0x44, 0x20, 0x00, 0x20 };
   char *buf;
   unsigned char rbuf[400];
+  int k;
 
   /* if we are running in native mode (aka port 445) don't do netbios */
   if (protoFlag == WIN2000_NATIVEMODE)
@@ -649,7 +695,8 @@ int NBSSessionRequest(int s) {
   memcpy(nb_name, "CKFDENECFDEFFCFGEFFCCACACACACACA", 32);      /* *SMBSERVER */
   memcpy(nb_local, "EIFJEEFCEBCACACACACACACACACACACA", 32);     /* HYDRA */
 
-  buf = (char *) malloc(100);
+  if ((buf = (char *) malloc(100)) == NULL)
+    return -1;
   memset(buf, 0, 100);
   memcpy(buf, (char *) rqbuf, 5);
   memcpy(buf + 5, nb_name, 32);
@@ -661,10 +708,9 @@ int NBSSessionRequest(int s) {
   free(buf);
 
   memset(rbuf, 0, 400);
-  hydra_recv(s, (char *) rbuf, sizeof(rbuf));
+  k = hydra_recv(s, (char *) rbuf, sizeof(rbuf));
 
-
-  if ((rbuf != NULL) && (rbuf[0] == 0x82))
+  if (k > 0 && (rbuf[0] == 0x82))
     return 0;                   /* success */
   else
     return -1;                  /* failed */
@@ -683,7 +729,7 @@ int NBSSessionRequest(int s) {
 int SMBNegProt(int s) {
   unsigned char buf[] = {
     0x00, 0x00, 0x00, 0xbe, 0xff, 0x53, 0x4d, 0x42,
-    0x72, 0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x40,
+    0x72, 0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0xc0,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x7d,
     0x00, 0x00, 0x01, 0x00, 0x00, 0x9b, 0x00, 0x02,
@@ -732,7 +778,7 @@ int SMBNegProt(int s) {
   unsigned char rbuf[400];
   unsigned char sess_key[2];
   unsigned char userid[2] = { 0xCD, 0xEF };
-  int i = 0, j = 0;
+  int i = 0, j = 0, k;
   int iLength = 194;
   int iResponseOffset = 73;
 
@@ -743,8 +789,6 @@ int SMBNegProt(int s) {
   sess_key[0] = getpid() - (100 * sess_key[1]);
   memcpy(buf + 30, sess_key, 2);
   memcpy(buf + 32, userid, 2);
-
-
 
   if (smb_auth_mechanism == AUTH_LM) {
     if (verbose)
@@ -757,8 +801,8 @@ int SMBNegProt(int s) {
 
 
   hydra_send(s, (char *) buf, iLength, 0);
-  hydra_recv(s, (char *) rbuf, sizeof(rbuf));
-  if (rbuf == NULL)
+  k = hydra_recv(s, (char *) rbuf, sizeof(rbuf));
+  if (k == 0)
     return 3;
 
   /* retrieve the security mode */
@@ -856,10 +900,12 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
   unsigned char *NTLMv2hash = NULL;
   unsigned char *NTLMhash = NULL;
   unsigned char *LMhash = NULL;
+  unsigned char unicodeLogin[32 * 2];
+  int j;
   char bufReceive[512];
   int nReceiveBufferSize = 0;
   int ret;
-  int iByteCount, iOffset = 0;
+  int iByteCount = 0, iOffset = 0;
 
   if (accntFlag == 0) {
     strcpy((char *) workgroup, "localhost");
@@ -885,7 +931,7 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
     0x73,                       /* SMB Command: Session Setup AndX */
     0x00, 0x00, 0x00, 0x00,     /* NT Status: STATUS_SUCCESS */
     0x08,                       /* Flags */
-    0x01, 0x40,                 /* Flags2 */
+    0x01, 0xc0,                 /* Flags2 */ /* add Unicode */
     0x00, 0x00,                 /* Process ID High */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     /* Signature */
     0x00, 0x00,                 /* Reserved */
@@ -926,12 +972,15 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
       memcpy(buf + 36, szSessionRequest, 23);
 
       /* Calculate and set LAN Manager password hash */
-      LMhash = (unsigned char *) malloc(24);
+      if ((LMhash = (unsigned char *) malloc(24)) == NULL)
+        return -1;
       memset(LMhash, 0, 24);
 
       ret = HashLM(&LMhash, (unsigned char *) szPassword, (unsigned char *) challenge);
-      if (ret == -1)
+      if (ret == -1) {
+        free(LMhash);
         return -1;
+      }
 
       memcpy(buf + iOffset, LMhash, 24);
       free(LMhash);
@@ -952,7 +1001,7 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
         0x18, 0x00,             /* LAN Manager Password Hash Length */
         0x18, 0x00,             /* NT LAN Manager Password Hash Length */
         0x00, 0x00, 0x00, 0x00, /* Reserved */
-        0x50, 0x00, 0x00, 0x00, /* Capabilities */
+        0x5c, 0x00, 0x00, 0x00, /* Capabilities */ /* Add Unicode */
         0x49, 0x00              /* Byte Count -- MUST SET */
       };
 
@@ -963,7 +1012,8 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
       memcpy(buf + 36, szSessionRequest, 29);
 
       /* Calculate and set NTLM password hash */
-      NTLMhash = (unsigned char *) malloc(24);
+      if ((NTLMhash = (unsigned char *) malloc(24)) == NULL)
+        return -1;
       memset(NTLMhash, 0, 24);
 
       /* We don't need to actually calculated a LM hash for this mode, only NTLM */
@@ -1000,12 +1050,15 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
       memcpy(buf + 36, szSessionRequest, 29);
 
       /* Calculate and set LMv2 response hash */
-      LMv2hash = (unsigned char *) malloc(24);
+      if ((LMv2hash = (unsigned char *) malloc(24)) == NULL)
+        return -1;
       memset(LMv2hash, 0, 24);
 
       ret = HashLMv2(&LMv2hash, (unsigned char *) szLogin, (unsigned char *) szPassword);
-      if (ret == -1)
+      if (ret == -1) {
+        free(LMv2hash);
         return -1;
+      }
 
       memcpy(buf + iOffset, LMv2hash, 24);
       free(LMv2hash);
@@ -1106,17 +1159,20 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
   }
 
   /* Set account and workgroup values */
-  memcpy(buf + iOffset + iByteCount, szLogin, strlen(szLogin));
-  iByteCount += strlen(szLogin) + 1;    /* NULL pad account name */
-  memcpy(buf + iOffset + iByteCount, workgroup, strlen((char *) workgroup));
-  iByteCount += strlen((char *) workgroup) + 1; // NULL pad workgroup name
+
+  j = UTF8_UTF16LE((unsigned char *) szLogin, strlen(szLogin), buf + iOffset + iByteCount+1, 2*strlen(szLogin));
+  iByteCount += j +3; /* NULL pad account name */
+  j = UTF8_UTF16LE(workgroup, strlen((char *) workgroup), buf+iOffset+iByteCount, 2*strlen((char *) workgroup));
+  iByteCount += j+2; // NULL pad workgroup name
 
   /* Set native OS and LAN Manager values */
 
-  sprintf((char *) (buf + iOffset + iByteCount), "Unix");
-  iByteCount += strlen("Unix") + 1;     // NULL pad OS name
-  sprintf((char *) (buf + iOffset + iByteCount), "Samba");
-  iByteCount += strlen("Samba") + 1;    // NULL pad LAN Manager name
+  char *szOSName = "Unix";
+  j = UTF8_UTF16LE((unsigned char *) szOSName, strlen(szOSName), buf+iOffset+iByteCount, 2*sizeof(szOSName));
+  iByteCount += j+2; // NULL terminated
+  char *szLANMANName = "Samba";
+  j = UTF8_UTF16LE((unsigned char *) szLANMANName, strlen(szLANMANName), buf+iOffset+iByteCount, 2*sizeof(szLANMANName));
+  iByteCount += j+2; // NULL terminated
 
   /* Set the header length */
   buf[2] = (iOffset - 4 + iByteCount) / 256;
@@ -1132,9 +1188,8 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
 
   hydra_send(s, (char *) buf, iOffset + iByteCount, 0);
 
-  nReceiveBufferSize = 0;
   nReceiveBufferSize = hydra_recv(s, bufReceive, sizeof(bufReceive));
-  if ((bufReceive == NULL) || (nReceiveBufferSize == 0))
+  if (/*(bufReceive == NULL) ||*/ (nReceiveBufferSize == 0))
     return -1;
 
   /* 41 - Action (Guest/Non-Guest Account) */
@@ -1271,7 +1326,8 @@ void service_smb(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
         //split the string after the domain if there are other values
         strtok(tmpdom, " ");
         if (tmpdom) {
-          strncpy((char *) domain, (char *) tmpdom, 16);
+          strncpy((char *) domain, (char *) tmpdom, sizeof(domain) - 1);
+          domain[sizeof(domain) - 1] = 0;
         } else {
           err = 1;
         }
@@ -1345,7 +1401,7 @@ void service_smb(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
         }
       }
       if (sock < 0) {
-        fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
         hydra_child_exit(1);
       }
       if (NBSSessionRequest(sock) < 0) {

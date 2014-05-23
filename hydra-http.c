@@ -2,9 +2,9 @@
 #include "sasl.h"
 
 extern char *HYDRA_EXIT;
-char *buf = NULL;
 char *webtarget = NULL;
 char *slash = "/";
+char *http_buf = NULL;
 int webport, freemischttp = 0;
 
 int http_auth_mechanism = AUTH_BASIC;
@@ -13,7 +13,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   char *empty = "";
   char *login, *pass, buffer[500], buffer2[500];
   char *header = "";            /* XXX TODO */
-  char *ptr;
+  char *ptr, *fooptr;
 
   if (strlen(login = hydra_get_next_login()) == 0)
     login = empty;
@@ -21,7 +21,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
     pass = empty;
 
   // we must reset this if buf is NULL and we do MD5 digest
-  if (buf == NULL && http_auth_mechanism == AUTH_DIGESTMD5)
+  if (http_buf == NULL && http_auth_mechanism == AUTH_DIGESTMD5)
     http_auth_mechanism = AUTH_BASIC;
 
   switch (http_auth_mechanism) {
@@ -48,12 +48,13 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   case AUTH_DIGESTMD5:{
       char *pbuffer;
 
-      pbuffer = hydra_strcasestr(buf, "WWW-Authenticate: Digest ");
+      pbuffer = hydra_strcasestr(http_buf, "WWW-Authenticate: Digest ");
       strncpy(buffer, pbuffer + strlen("WWW-Authenticate: Digest "), sizeof(buffer));
       buffer[sizeof(buffer) - 1] = '\0';
 
-      sasl_digest_md5(buffer2, login, pass, buffer, miscptr, type, webtarget, webport, header);
-      if (buffer2 == NULL) {
+      fooptr = buffer2;
+      sasl_digest_md5(fooptr, login, pass, buffer, miscptr, type, webtarget, webport, header);
+      if (fooptr == NULL) {
         return 3;
       }
 
@@ -93,15 +94,15 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
         return 1;
 
       //receive challenge
-      if (buf != NULL)
-        free(buf);
-      buf = hydra_receive_line(s);
-      while (buf != NULL && (pos = hydra_strcasestr(buf, "WWW-Authenticate: NTLM ")) == NULL) {
-        free(buf);
-        buf = hydra_receive_line(s);
+      if (http_buf != NULL)
+        free(http_buf);
+      http_buf = hydra_receive_line(s);
+      while (http_buf != NULL && (pos = hydra_strcasestr(http_buf, "WWW-Authenticate: NTLM ")) == NULL) {
+        free(http_buf);
+        http_buf = hydra_receive_line(s);
       }
 
-      if (buf == NULL)
+      if (http_buf == NULL)
         return 1;
 
       if (pos != NULL) {
@@ -117,8 +118,8 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
       }
       //recover challenge
       from64tobits((char *) buf1, pos);
-      free(buf);
-      buf = NULL;
+      free(http_buf);
+      http_buf = NULL;
 
       //Send response
       buildAuthResponse((tSmbNtlmAuthChallenge *) buf1, (tSmbNtlmAuthResponse *) buf2, 0, login, pass, NULL, NULL);
@@ -148,63 +149,63 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
     return 1;
   }
 
-  if (buf != NULL)
-    free(buf);
-  buf = hydra_receive_line(s);
-  while (buf != NULL && strstr(buf, "HTTP/1.") == NULL) {
-    free(buf);
-    buf = hydra_receive_line(s);
+  if (http_buf != NULL)
+    free(http_buf);
+  http_buf = hydra_receive_line(s);
+  while (http_buf != NULL && strstr(http_buf, "HTTP/1.") == NULL) {
+    free(http_buf);
+    http_buf = hydra_receive_line(s);
   }
 
   //if server cut the connection, just exit cleanly or 
   //this will be an infinite loop
-  if (buf == NULL) {
+  if (http_buf == NULL) {
     if (verbose)
       hydra_report(stderr, "[ERROR] Server did not answer\n");
     return 3;
   }
 
   if (debug)
-    hydra_report(stderr, "S:%s\n", buf);
+    hydra_report(stderr, "S:%s\n", http_buf);
 
-  ptr = ((char *) index(buf, ' ')) + 1;
+  ptr = ((char *) index(http_buf, ' ')) + 1;
   if (ptr != NULL && (*ptr == '2' || *ptr == '3' || strncmp(ptr, "403", 3) == 0 || strncmp(ptr, "404", 3) == 0)) {
     hydra_report_found_host(port, ip, "www", fp);
     hydra_completed_pair_found();
-    if (buf != NULL) {
-      free(buf);
-      buf = NULL;
+    if (http_buf != NULL) {
+      free(http_buf);
+      http_buf = NULL;
     }
   } else {
     if (ptr != NULL && *ptr != '4')
-      fprintf(stderr, "[WARNING] Unusual return code: %c for %s:%s\n", (char) *(index(buf, ' ') + 1), login, pass);
+      fprintf(stderr, "[WARNING] Unusual return code: %c for %s:%s\n", (char) *(index(http_buf, ' ') + 1), login, pass);
 
     //the first authentication type failed, check the type from server header
-    if ((hydra_strcasestr(buf, "WWW-Authenticate: Basic") == NULL) && (http_auth_mechanism == AUTH_BASIC)) {
+    if ((hydra_strcasestr(http_buf, "WWW-Authenticate: Basic") == NULL) && (http_auth_mechanism == AUTH_BASIC)) {
       //seems the auth supported is not Basic shceme so testing further
       int find_auth = 0;
 
-      if (hydra_strcasestr(buf, "WWW-Authenticate: NTLM") != NULL) {
+      if (hydra_strcasestr(http_buf, "WWW-Authenticate: NTLM") != NULL) {
         http_auth_mechanism = AUTH_NTLM;
         find_auth = 1;
       }
 #ifdef LIBOPENSSL
-      if (hydra_strcasestr(buf, "WWW-Authenticate: Digest") != NULL) {
+      if (hydra_strcasestr(http_buf, "WWW-Authenticate: Digest") != NULL) {
         http_auth_mechanism = AUTH_DIGESTMD5;
         find_auth = 1;
       }
 #endif
 
       if (find_auth) {
-//        free(buf);
-//        buf = NULL;
+//        free(http_buf);
+//        http_buf = NULL;
         return 1;
       }
     }
     hydra_completed_pair();
   }
-//  free(buf);
-//  buf = NULL;
+//  free(http_buf);
+//  http_buf = NULL;
   if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
     return 3;
   return 1;
@@ -269,7 +270,7 @@ void service_http(char *ip, int sp, unsigned char options, char *miscptr, FILE *
         if (sock < 0) {
           if (freemischttp)
             free(miscptr);
-          fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+          if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
           hydra_child_exit(1);
         }
         next_run = 2;

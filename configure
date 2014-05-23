@@ -264,11 +264,11 @@ if [ "X" = "X$PCRE_PATH" -o "X" = "X$PCRE_IPATH" ]; then
 fi
 
 echo "Checking for Postgres (libpq.so, libpq-fe.h) ..."
-if [ "$SYSO" = "Cygwin" ]; then
-    echo "                                             ... DISABLED - postgres is buggy in Cygwin at the moment"
-    POSTGRES_PATH=""
-    POSTGRES_IPATH=""
-else
+#if [ "$SYSO" = "Cygwin" ]; then
+#    echo "                                             ... DISABLED - postgres is buggy in Cygwin at the moment"
+#    POSTGRES_PATH=""
+#    POSTGRES_IPATH=""
+#else
   for i in $LIBDIRS ; do
     if [ "X" = "X$POSTGRES_PATH" ]; then
         if [ -f "$i/libpq.so" -o -f "$i/libpq.dylib" -o -f "$i/libpq.a" ]; then
@@ -313,7 +313,7 @@ else
     POSTGRES_PATH=""
     POSTGRES_IPATH=""
   fi
-fi
+#fi
 
 echo "Checking for SVN (libsvn_client-1 libapr-1.so libaprutil-1.so) ..."
 for i in $LIBDIRS ; do
@@ -336,15 +336,19 @@ for i in $LIBDIRS ; do
         fi
     fi
     if [ "X" = "X$SVN_PATH" ]; then
-        TMP_LIB=`/bin/ls $i/libsvn_client*.so* 2> /dev/null | grep libsvn_client.`
-        if [ -n "$TMP_LIB" ]; then
+        TMP_LIB1=`/bin/ls $i/libsvn_client*.so* 2> /dev/null | grep libsvn_client.`
+        TMP_LIB2=`/bin/ls $i/libapr-1*.so* 2> /dev/null | grep libsvn_client.`
+        TMP_LIB3=`/bin/ls $i/libaprutil-1*.so* 2> /dev/null | grep libsvn_client.`
+        if [ -n "$TMP_LIB1" -a -n "$TMP_LIB2" -a -n "$TMP_LIB3" ]; then
           SVN_PATH="$i"
 	  APR_PATH="$i"
         fi
     fi
     if [ "X" = "X$SVN_PATH" ]; then
-        TMP_LIB=`/bin/ls $i/libsvn_client*.dll* 2> /dev/null | grep libsvn_client.`
-        if [ -n "$TMP_LIB" ]; then
+        TMP_LIB1=`/bin/ls $i/libsvn_client*.dll* 2> /dev/null | grep libsvn_client.`
+        TMP_LIB2=`/bin/ls $i/libapr-1*.dll* 2> /dev/null | grep libsvn_client.`
+        TMP_LIB3=`/bin/ls $i/libaprutil-1*.dll* 2> /dev/null | grep libsvn_client.`
+        if [ -n "$TMP_LIB1" -a -n "$TMP_LIB2" -a -n "$TMP_LIB3" ]; then
           SVN_PATH="$i"
 	  APR_PATH="$i"
         fi
@@ -823,6 +827,22 @@ if [ -n "$CRYPTO_PATH" ]; then
   echo "                                  ... RSA_generate_key()$RSA found"
 fi
 
+echo "Checking for secure compile option support in gcc ..."
+GCCSEC="no"
+LDSEC="no"
+GCCSECOPT="-fstack-protector-all --param ssp-buffer-size=4 -D_FORTIFY_SOURCE=2"
+echo '#include <stdio.h>' > $TMPC.c
+echo 'int main() { printf(""); return 0; }' >> $TMPC.c
+gcc -pie -fPIE $GCCSEPOPT -o $TMPC $TMPC.c > /dev/null 2> $TMPC.c.err
+test -x $TMPC && GCCSEC="yes"
+grep -q fPI $TMPC.c.err || GCCSECOPT="-pie -fPIE $GCCSECOPT"
+rm -f "$TMPC"
+gcc $GCCSECOPT -Wl,-z,now -Wl,-z,relro -o $TMPC $TMPC.c > /dev/null 2> $TMPC.c.err
+test -x $TMPC && { LDSEC="yes" ; GCCSECOPT="$GCCSECOPT -Wl,-z,now -Wl,-z,relro" ; }
+rm -f $TMPC $TMPC.c $TMPC.c.err
+echo "                                                  Compiling... $GCCSEC"
+echo "                                                  Linking... $LDSEC"
+
 echo
 XDEFINES=""
 XLIBS=""
@@ -1030,6 +1050,12 @@ if [ "x$WINDRES" = "x" ]; then
   echo HYDRA_LOGO= >> Makefile
   echo PWI_LOGO= >> Makefile
 fi
+if [ "$GCCSEC" = "yes" ]; then
+  echo "SEC=$GCCSECOPT" >> Makefile
+else
+  echo "SEC=" >> Makefile
+fi
+echo >> Makefile
 if [ "x$NOSTRIP" = "x" ]; then
   cat Makefile.am >> Makefile
 else

@@ -5,7 +5,7 @@
 #endif
 
 extern char *HYDRA_EXIT;
-char *buf;
+char *buf = NULL;
 
 int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp) {
   char *empty = "";
@@ -25,7 +25,10 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
   }
   sleep(1);
   do {
-    buf = hydra_receive_line(s);
+    if (buf != NULL)
+      free(buf);
+    if ((buf = hydra_receive_line(s)) == NULL)
+      return 3;
     if (buf[strlen(buf) - 1] == '\n')
       buf[strlen(buf) - 1] = 0;
     if (buf[strlen(buf) - 1] == '\r')
@@ -49,7 +52,9 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
       return 1;
     }
     do {
-      buf = hydra_receive_line(s);
+      free(buf);
+      if ((buf = hydra_receive_line(s)) == NULL)
+        return 3;
       if (buf[strlen(buf) - 1] == '\n')
         buf[strlen(buf) - 1] = 0;
       if (buf[strlen(buf) - 1] == '\r')
@@ -58,6 +63,7 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
     if (buf != NULL && strstr(buf, "assw") != NULL) {
       hydra_completed_pair();
       free(buf);
+      buf = NULL;
       if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
         return 3;
       if (strlen(pass = hydra_get_next_password()) == 0)
@@ -73,12 +79,16 @@ int start_cisco(int s, char *ip, int port, unsigned char options, char *miscptr,
         return 1;
       }
       do {
+        if (buf != NULL)
+          free(buf);
         buf = hydra_receive_line(s);
-        if (buf[strlen(buf) - 1] == '\n')
-          buf[strlen(buf) - 1] = 0;
-        if (buf[strlen(buf) - 1] == '\r')
-          buf[strlen(buf) - 1] = 0;
-      } while (strlen(buf) <= 1);
+        if (buf != NULL) {
+          if (buf[strlen(buf) - 1] == '\n')
+            buf[strlen(buf) - 1] = 0;
+          if (buf[strlen(buf) - 1] == '\r')
+            buf[strlen(buf) - 1] = 0;
+        }
+      } while (buf != NULL && strlen(buf) <= 1);
     }
 
   }
@@ -144,11 +154,11 @@ void service_cisco(char *ip, int sp, unsigned char options, char *miscptr, FILE 
             if (failc < retry) {
               next_run = 1;
               failc++;
-              hydra_report(stderr, "[ERROR] Child with pid %d was disconnected - retrying (%d of %d retries)\n", (int) getpid(), failc, retry);
+              if (quiet != 1) hydra_report(stderr, "[ERROR] Child with pid %d was disconnected - retrying (%d of %d retries)\n", (int) getpid(), failc, retry);
               sleep(3);
               break;
             } else {
-              hydra_report(stderr, "[ERROR] Child with pid %d was disconnected - exiting\n", (int) getpid());
+              if (quiet != 1) hydra_report(stderr, "[ERROR] Child with pid %d was disconnected - exiting\n", (int) getpid());
               hydra_child_exit(0);
             }
           }

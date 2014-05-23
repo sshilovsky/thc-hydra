@@ -50,7 +50,8 @@ int start_oracle(int s, char *ip, int port, unsigned char options, char *miscptr
   if (strlen(pass = hydra_get_next_password()) == 0)
     pass = empty;
 
-  strncpy(sid, miscptr, sizeof(sid));
+  strncpy(sid, miscptr, sizeof(sid) - 1);
+  sid[sizeof(sid) - 1] = 0;
   snprintf(buffer, sizeof(buffer), "//%s:%d/%s", hydra_address2string(ip), port, sid);
 
   /*

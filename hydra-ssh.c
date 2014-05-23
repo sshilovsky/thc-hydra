@@ -1,8 +1,6 @@
-
 /*
 
 libssh is available at http://www.libssh.org
-current version is 0.4.8 
 If you want support for ssh v1 protocol, you
 have to add option -DWITH_SSH1=On in the cmake
 
@@ -129,7 +127,8 @@ void service_ssh(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
       ssh_disconnect(session);
       ssh_finalize();
       ssh_free(session);
-      fprintf(stderr, "[ERROR] ssh protocol error\n");
+      if (verbose)
+        fprintf(stderr, "[ERROR] ssh protocol error\n");
       hydra_child_exit(2);
     case 4:
       ssh_disconnect(session);
@@ -161,7 +160,39 @@ int service_ssh_init(char *ip, int sp, unsigned char options, char *miscptr, FIL
   // 
   // return codes:
   //   0 all OK
-  //   -1  error, hydra will exit, so print a good error message here
+  //   1 skip target without generating an error
+  //   2 skip target because of protocol problems
+  //   3 skip target because its unreachable
+#ifdef LIBSSH
+  int rc, method;
+  ssh_session session = ssh_new();
+  
+  if (verbose || debug)
+    printf("[INFO] Testing if password authentication is supported by ssh://%s:%d\n", hydra_address2string(ip), port);
+  ssh_options_set(session, SSH_OPTIONS_PORT, &port);
+  ssh_options_set(session, SSH_OPTIONS_HOST, hydra_address2string(ip));
+  ssh_options_set(session, SSH_OPTIONS_USER, "root");
+  ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "none");
+  ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "none");
+  if (ssh_connect(session) != 0) {
+    fprintf(stderr, "[ERROR] could not connect to ssh://%s:%d\n", hydra_address2string(ip), port);
+    return 2;
+  } 
+  rc = ssh_userauth_none(session, NULL);
+  method = ssh_userauth_list(session, NULL); 
+  ssh_disconnect(session);
+  ssh_finalize();
+  ssh_free(session);
 
+  if ((method & SSH_AUTH_METHOD_INTERACTIVE) || (method & SSH_AUTH_METHOD_PASSWORD)) {
+    if (verbose || debug)
+      printf("[INFO] Successful, password authentication is supported by ssh://%s:%d\n", hydra_address2string(ip), port);
+    return 0;
+  }
+
+  fprintf(stderr, "[ERROR] target ssh://%s:%d/ does not support password authentication.\n", hydra_address2string(ip), port);
+  return 1;
+#else
   return 0;
+#endif
 }

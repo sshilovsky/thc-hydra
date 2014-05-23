@@ -382,7 +382,8 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
         if ((endloc = strchr(startloc, '\n')) != NULL) {
           startloc[endloc - startloc] = 0;
         }
-        strcpy(str, startloc);
+        strncpy(str, startloc, sizeof(str));
+        str[sizeof(str) - 1] = 0;
 
         endloc = strchr(str, '/');
         if (endloc != NULL) {
@@ -394,11 +395,12 @@ int start_http_form(int s, char *ip, int port, unsigned char options, char *misc
         if (strlen(str) - strlen(str2) == 0) {
           strcpy(str3, "/");
         } else {
-          strncpy(str3, str + strlen(str2), strlen(str) - strlen(str2) - 1);
-          str3[strlen(str) - strlen(str2) - 1] = 0;
+          strncpy(str3, str + strlen(str2), strlen(str) - strlen(str2));
+          str3[strlen(str) - strlen(str2)] = 0;
         }
       } else {
-        strncpy(str2, webtarget, sizeof(str2));
+        strncpy(str2, webtarget, sizeof(str2) - 1);
+        str2[sizeof(str2) - 1] = 0;
         if (redirected_url_buff[0] != '/') {
           //it's a relative path, so we have to concatenate it
           //with the path from the first url given
@@ -524,20 +526,20 @@ void service_http_form(char *ip, int sp, unsigned char options, char *miscptr, F
     *ptr++ = 0;
   optional1 = ptr;
   if (strstr(url, "\\:") != NULL) {
-    if ((ptr = malloc(strlen(url))) != NULL) {
+    if ((ptr = malloc(strlen(url))) != NULL) { // no need for +1
       strcpy(ptr, hydra_strrep(url, "\\:", ":"));
       url = ptr;
     }
   }
   if (strstr(variables, "\\:") != NULL) {
-    if ((ptr = malloc(strlen(variables))) != NULL) {
+    if ((ptr = malloc(strlen(variables))) != NULL) { // no need for +1
       strcpy(ptr, hydra_strrep(variables, "\\:", ":"));
       variables = ptr;
     }
   }
   if (strstr(cond, "\\:") != NULL) {
-    if ((ptr = malloc(strlen(cond))) != NULL) {
-      strcpy(ptr, hydra_strrep(cond, "\\:", ":"));
+    if ((ptr = malloc(strlen(cond))) != NULL) { // no need for +1
+      strcpy(ptr, hydra_strrep(cond, "\\:", ":")); 
       cond = ptr;
     }
   }

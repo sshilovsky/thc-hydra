@@ -49,7 +49,7 @@ char *nntp_read_server_capacity(int sock) {
 
 int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp) {
   char *empty = "\"\"";
-  char *login, *pass, buffer[300], buffer2[500];
+  char *login, *pass, buffer[500], buffer2[500], *fooptr;
   int i = 1;
 
   if (strlen(login = hydra_get_next_login()) == 0)
@@ -59,6 +59,10 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
 
   while (i > 0 && hydra_data_ready(s) > 0)
     i = hydra_recv(s, buffer, 300);
+
+  if (i < 0)
+    i = 0;
+  buffer[i] = 0;
 
   switch (nntp_auth_mechanism) {
   case AUTH_LOGIN:
@@ -156,7 +160,7 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       //receive
       if ((buf = hydra_receive_line(s)) == NULL)
         return 1;
-      if (buf == NULL || strstr(buf, "383") == NULL) {
+      if (buf == NULL || strstr(buf, "383") == NULL || strlen(buf) < 8) {
         hydra_report(stderr, "[ERROR] NNTP DIGEST-MD5 AUTH : %s\n", buf);
         free(buf);
         return 3;
@@ -165,13 +169,14 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       from64tobits((char *) buffer, buf + 4);
       free(buf);
 
-      if (verbose)
+      if (debug)
         hydra_report(stderr, "DEBUG S: %s\n", buffer);
-      sasl_digest_md5(buffer2, login, pass, buffer, miscptr, "nntp", NULL, 0, NULL);
-      if (buffer2 == NULL)
+      fooptr = buffer2;
+      sasl_digest_md5(fooptr, login, pass, buffer, miscptr, "nntp", NULL, 0, NULL);
+      if (fooptr == NULL)
         return 3;
 
-      if (verbose)
+      if (debug)
         hydra_report(stderr, "DEBUG C: %s\n", buffer2);
       hydra_tobase64((unsigned char *) buffer2, strlen(buffer2), sizeof(buffer2));
       sprintf(buffer, "%s\r\n", buffer2);
@@ -193,7 +198,7 @@ int start_nntp(int s, char *ip, int port, unsigned char options, char *miscptr, 
       }
       if ((buf = hydra_receive_line(s)) == NULL)
         return 1;
-      if (buf == NULL || strstr(buf, "383") == NULL) {
+      if (buf == NULL || strstr(buf, "383") == NULL || strlen(buf) < 8) {
         hydra_report(stderr, "[ERROR] NNTP NTLM AUTH : %s\n", buf);
         free(buf);
         return 3;

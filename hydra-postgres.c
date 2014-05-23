@@ -29,9 +29,10 @@ int start_postgres(int s, char *ip, int port, unsigned char options, char *miscp
   PGconn *pgconn;
 
   if (miscptr)
-    strncpy(database, miscptr, sizeof(database));
+    strncpy(database, miscptr, sizeof(database) - 1);
   else
-    strncpy(database, DEFAULT_DB, sizeof(database));
+    strncpy(database, DEFAULT_DB, sizeof(database) - 1);
+  database[sizeof(database) - 1] = 0;
 
   if (strlen(login = hydra_get_next_login()) == 0)
     login = empty;
@@ -92,7 +93,7 @@ void service_postgres(char *ip, int sp, unsigned char options, char *miscptr, FI
         port = mysslport;
       }
       if (sock < 0) {
-        fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
+        if (quiet != 1) fprintf(stderr, "[ERROR] Child with pid %d terminating, can not connect\n", (int) getpid());
         hydra_child_exit(1);
       }
       next_run = 2;
