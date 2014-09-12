@@ -141,7 +141,7 @@ char *SERVICES = "asterisk afp cisco cisco-enable cvs firebird ftp ftps http[s]-
 
 #define MAXBUF       520
 #define MAXLINESIZE  ( ( MAXBUF / 2 ) - 4 )
-#define MAXTASKS     64
+#define MAXTASKS     999
 #define MAXSERVERS   16
 #define MAXFAIL      3
 #define MAXENDWAIT   20

@@ -673,7 +673,7 @@ GtkWidget *create_wndMain(void) {
   gtk_table_attach(GTK_TABLE(table10), spnTimeout, 1, 2, 1, 2, (GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK), (GtkAttachOptions) (GTK_EXPAND), 0, 0);
   gtk_tooltips_set_tip(tooltips, spnTimeout, "The maximum timeout an attack process is waiting for a response from the target", NULL);
 
-  spnTasks_adj = gtk_adjustment_new(16, 0, 128, 1, 10, 0);
+  spnTasks_adj = gtk_adjustment_new(16, 0, 999, 1, 10, 0);
   spnTasks = gtk_spin_button_new(GTK_ADJUSTMENT(spnTasks_adj), 1, 0);
   gtk_widget_set_name(spnTasks, "spnTasks");
   gtk_widget_show(spnTasks);
